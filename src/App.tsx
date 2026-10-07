@@ -1039,52 +1039,56 @@ export default function App() {
           <small className="version-label">TECH NECK · VERSION 1.0</small>
         </main>
       )}
-      <nav className="bottom-nav" aria-label="Main navigation">
-        <span
-          className="nav-selection"
-          aria-hidden="true"
-          style={{
-            transform: `translateX(${activeScreen || tab === "train" ? 0 : tab === "activity" ? 100 : 200}%)`,
-            opacity: showAbout ? 0 : 1,
-          }}
-        />
-        <button
-          className={
-            !showAbout && (activeScreen || tab === "train") ? "selected" : ""
-          }
-          aria-current={
-            !showAbout && (activeScreen || tab === "train") ? "page" : undefined
-          }
-          onClick={() => navigateToTab("train")}
-        >
-          <Play size={19} />
-          <span>Train</span>
-        </button>
-        <button
-          className={!showAbout && tab === "activity" ? "selected" : ""}
-          aria-current={
-            !showAbout && !activeScreen && tab === "activity"
-              ? "page"
-              : undefined
-          }
-          onClick={() => navigateToTab("activity")}
-        >
-          <CalendarDays size={20} />
-          <span>Activity</span>
-        </button>
-        <button
-          className={!showAbout && tab === "settings" ? "selected" : ""}
-          aria-current={
-            !showAbout && !activeScreen && tab === "settings"
-              ? "page"
-              : undefined
-          }
-          onClick={() => navigateToTab("settings")}
-        >
-          <Settings2 size={20} />
-          <span>Settings</span>
-        </button>
-      </nav>
+      {(!activeScreen || finishScreen) && (
+        <nav className="bottom-nav" aria-label="Main navigation">
+          <span
+            className="nav-selection"
+            aria-hidden="true"
+            style={{
+              transform: `translateX(${activeScreen || tab === "train" ? 0 : tab === "activity" ? 100 : 200}%)`,
+              opacity: showAbout ? 0 : 1,
+            }}
+          />
+          <button
+            className={
+              !showAbout && (activeScreen || tab === "train") ? "selected" : ""
+            }
+            aria-current={
+              !showAbout && (activeScreen || tab === "train")
+                ? "page"
+                : undefined
+            }
+            onClick={() => navigateToTab("train")}
+          >
+            <Play size={19} />
+            <span>Train</span>
+          </button>
+          <button
+            className={!showAbout && tab === "activity" ? "selected" : ""}
+            aria-current={
+              !showAbout && !activeScreen && tab === "activity"
+                ? "page"
+                : undefined
+            }
+            onClick={() => navigateToTab("activity")}
+          >
+            <CalendarDays size={20} />
+            <span>Activity</span>
+          </button>
+          <button
+            className={!showAbout && tab === "settings" ? "selected" : ""}
+            aria-current={
+              !showAbout && !activeScreen && tab === "settings"
+                ? "page"
+                : undefined
+            }
+            onClick={() => navigateToTab("settings")}
+          >
+            <Settings2 size={20} />
+            <span>Settings</span>
+          </button>
+        </nav>
+      )}
       {dialog === "export" && preparedBackup && (
         <Modal title="Your backup" onClose={closeBackup}>
           <p>
