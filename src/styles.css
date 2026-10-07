@@ -1521,3 +1521,62 @@ svg {
     animation: none;
   }
 }
+
+.about-screen {
+  padding-top: 31px;
+}
+.about-screen h1 {
+  font-size: 31px;
+  line-height: 1.18;
+  letter-spacing: -1.1px;
+  margin: 16px 0 21px;
+  max-width: 350px;
+  outline: none;
+}
+.about-screen p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #637779;
+}
+.about-screen section {
+  margin-top: 28px;
+}
+.about-screen h2 {
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 500;
+  margin-bottom: 11px;
+  letter-spacing: -0.25px;
+  color: #253f3f;
+}
+.about-sources {
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid #e6eeeb;
+}
+.about-sources h2 {
+  font-size: 12px;
+  color: #718a84;
+}
+.about-sources a {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--deep);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.about-sources a:focus-visible {
+  outline: 2px solid #203b3b;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+@media (max-width: 360px) {
+  .about-screen h1 {
+    font-size: 29px;
+  }
+}

@@ -32,6 +32,7 @@ import { getPose } from "./core/engine";
 import { publicAssetUrl } from "./core/assets";
 import type { AppData } from "./core/types";
 import ExerciseArt from "./components/ExerciseArt";
+import AboutPage from "./components/AboutPage";
 
 type Tab = "train" | "activity" | "settings";
 const formatTime = (seconds: number) =>
@@ -126,8 +127,14 @@ export default function App() {
   } = workout;
   const [tab, setTab] = useState<Tab>("train");
   const [showWorkout, setShowWorkout] = useState(false);
+  const [showAbout, setShowAbout] = useState(
+    () => window.location.hash === "#/about",
+  );
+  const aboutOrigin = useRef<{ tab: Tab; scrollY: number } | null>(null);
+  const aboutAppEntry = useRef(false);
+  const aboutRouteListener = useRef<() => void>(() => {});
   const [dialog, setDialog] = useState<
-    "exit" | "about" | "reset" | "import" | "export" | "achievement" | null
+    "exit" | "reset" | "import" | "export" | "achievement" | null
   >(null);
   const [selectedAchievementId, setSelectedAchievementId] = useState<
     string | null
@@ -167,7 +174,8 @@ export default function App() {
     (sum, item) => sum + item.durationSeconds + item.prepSeconds,
     0,
   );
-  const activeScreen = showWorkout && session && frame && exercise;
+  const activeScreen =
+    !showAbout && showWorkout && session && frame && exercise;
   const finishScreen = activeScreen && session.phase === "complete";
   const isRest = Boolean(
     session &&
@@ -196,7 +204,67 @@ export default function App() {
     setShowWorkout(false);
     setDialog(null);
   };
+  const clearAboutRoute = () => {
+    if (window.location.hash === "#/about") {
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname + window.location.search,
+      );
+    }
+    setShowAbout(false);
+    aboutOrigin.current = null;
+    aboutAppEntry.current = false;
+  };
+  const openAbout = () => {
+    if (showAbout) return;
+    aboutOrigin.current = { tab, scrollY: window.scrollY };
+    aboutAppEntry.current = true;
+    window.history.pushState(window.history.state, "", "#/about");
+    setShowAbout(true);
+    window.scrollTo(0, 0);
+  };
+  const backFromAbout = () => {
+    if (aboutAppEntry.current) window.history.back();
+    else {
+      clearAboutRoute();
+      setTab("train");
+      window.scrollTo(0, 0);
+    }
+  };
+  // Keep the browser listener current without re-subscribing on timer updates.
+  aboutRouteListener.current = () => {
+    const nextAbout = window.location.hash === "#/about";
+    if (nextAbout) {
+      if (!showAbout && !aboutOrigin.current)
+        aboutOrigin.current = { tab, scrollY: window.scrollY };
+      if (showWorkout) {
+        if (session && session.phase !== "complete") workout.pause();
+        setShowWorkout(false);
+      }
+      setShowAbout(true);
+      window.scrollTo(0, 0);
+    } else if (showAbout) {
+      setShowAbout(false);
+      const source = aboutOrigin.current;
+      setTab(source?.tab ?? "train");
+      window.requestAnimationFrame(() => {
+        if (window.location.hash !== "#/about")
+          window.scrollTo(0, source?.scrollY ?? 0);
+      });
+    }
+  };
+  useEffect(() => {
+    const onRouteChange = () => aboutRouteListener.current();
+    window.addEventListener("hashchange", onRouteChange);
+    window.addEventListener("popstate", onRouteChange);
+    return () => {
+      window.removeEventListener("hashchange", onRouteChange);
+      window.removeEventListener("popstate", onRouteChange);
+    };
+  }, []);
   const navigateToTab = (nextTab: Tab) => {
+    if (showAbout) clearAboutRoute();
     if (showWorkout) {
       if (session && session.phase !== "complete") workout.pause();
       setShowWorkout(false);
@@ -209,7 +277,12 @@ export default function App() {
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const filename = `tech-neck-backup-${localDay(new Date().toISOString())}.json`;
-    setPreparedBackup({ json, url, filename, returnToImport: dialog === "import" });
+    setPreparedBackup({
+      json,
+      url,
+      filename,
+      returnToImport: dialog === "import",
+    });
     setBackupNotice("");
     setDialog("export");
     setNotice("Your backup is ready.");
@@ -226,20 +299,27 @@ export default function App() {
     }
   };
   const closeBackup = () => {
-    setDialog(preparedBackup?.returnToImport && importPreview ? "import" : null);
+    setDialog(
+      preparedBackup?.returnToImport && importPreview ? "import" : null,
+    );
     setPreparedBackup(null);
     setBackupNotice("");
   };
   const copyBackup = async () => {
     if (!preparedBackup) return;
     try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      if (!navigator.clipboard?.writeText)
+        throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(preparedBackup.json);
-      setBackupNotice("Backup copied. Paste it into a file and save it as JSON.");
+      setBackupNotice(
+        "Backup copied. Paste it into a file and save it as JSON.",
+      );
     } catch {
       backupText.current?.focus();
       backupText.current?.select();
-      setBackupNotice("The backup text is selected. Copy it and save it as a JSON file.");
+      setBackupNotice(
+        "The backup text is selected. Copy it and save it as a JSON file.",
+      );
     }
   };
   const previewImport = async (file: File | undefined) => {
@@ -300,7 +380,23 @@ export default function App() {
   return (
     <div className={`app-shell ${activeScreen ? "session-shell" : ""}`}>
       <header className="topbar">
-        {activeScreen ? (
+        {showAbout ? (
+          <>
+            <button className="back-pill" onClick={backFromAbout}>
+              <ArrowLeft size={17} />
+              Back
+            </button>
+            <button
+              type="button"
+              className="brand-mark"
+              aria-label="Tech Neck home"
+              onClick={() => navigateToTab("train")}
+            >
+              <span className="brand-dot" />
+              tech neck
+            </button>
+          </>
+        ) : activeScreen ? (
           <>
             <button className="back-pill" onClick={leave}>
               <ArrowLeft size={17} />
@@ -342,7 +438,7 @@ export default function App() {
             <button
               className="top-icon"
               aria-label="About Tech Neck"
-              onClick={() => setDialog("about")}
+              onClick={openAbout}
             >
               <Info size={20} />
             </button>
@@ -354,7 +450,9 @@ export default function App() {
           {storageError}
         </div>
       )}
-      {activeScreen ? (
+      {showAbout ? (
+        <AboutPage />
+      ) : activeScreen ? (
         finishScreen ? (
           <main className="completion-screen">
             <div className="completion-orbit">
@@ -935,10 +1033,7 @@ export default function App() {
               No account. No cloud. No tracking.
             </span>
           </div>
-          <button
-            className="text-button about-link"
-            onClick={() => setDialog("about")}
-          >
+          <button className="text-button about-link" onClick={openAbout}>
             About Tech Neck <Info size={15} />
           </button>
           <small className="version-label">TECH NECK · VERSION 1.0</small>
@@ -946,17 +1041,23 @@ export default function App() {
       )}
       <nav className="bottom-nav" aria-label="Main navigation">
         <button
-          className={activeScreen || tab === "train" ? "selected" : ""}
-          aria-current={activeScreen || tab === "train" ? "page" : undefined}
+          className={
+            !showAbout && (activeScreen || tab === "train") ? "selected" : ""
+          }
+          aria-current={
+            !showAbout && (activeScreen || tab === "train") ? "page" : undefined
+          }
           onClick={() => navigateToTab("train")}
         >
           <Play size={19} />
           <span>Train</span>
         </button>
         <button
-          className={tab === "activity" ? "selected" : ""}
+          className={!showAbout && tab === "activity" ? "selected" : ""}
           aria-current={
-            !activeScreen && tab === "activity" ? "page" : undefined
+            !showAbout && !activeScreen && tab === "activity"
+              ? "page"
+              : undefined
           }
           onClick={() => navigateToTab("activity")}
         >
@@ -964,9 +1065,11 @@ export default function App() {
           <span>Activity</span>
         </button>
         <button
-          className={tab === "settings" ? "selected" : ""}
+          className={!showAbout && tab === "settings" ? "selected" : ""}
           aria-current={
-            !activeScreen && tab === "settings" ? "page" : undefined
+            !showAbout && !activeScreen && tab === "settings"
+              ? "page"
+              : undefined
           }
           onClick={() => navigateToTab("settings")}
         >
@@ -1027,7 +1130,10 @@ export default function App() {
           <div
             className={`achievement-detail ${selectedAchievement.unlocked ? "earned" : "locked"}`}
           >
-            <img src={publicAssetUrl(`badges/${selectedAchievement.id}.png`)} alt="" />
+            <img
+              src={publicAssetUrl(`badges/${selectedAchievement.id}.png`)}
+              alt=""
+            />
             <span className="achievement-detail-status">
               {selectedAchievement.unlocked ? (
                 <Check size={15} />
@@ -1113,34 +1219,6 @@ export default function App() {
           </button>
           <button className="text-button" onClick={() => setDialog(null)}>
             Keep my saved workout
-          </button>
-        </Modal>
-      )}
-      {dialog === "about" && (
-        <Modal title="A daily posture reset" onClose={() => setDialog(null)}>
-          <p>
-            Seven guided movements for your neck, shoulders, and chest. Follow
-            the illustrations, move gently, and let the voice guide your
-            breathing.
-          </p>
-          <div className="about-facts">
-            <span>
-              07 <small>exercises</small>
-            </span>
-            <span>
-              10 <small>XP per reset</small>
-            </span>
-            <span>
-              {formatTime(totalSeconds)} <small>with preparation</small>
-            </span>
-          </div>
-          <p className="muted">
-            Your routine includes 20 seconds of preparation before every
-            exercise. You can pause, skip ahead, or save your place at any time.
-          </p>
-          <button className="primary-button" onClick={() => setDialog(null)}>
-            Got it
-            <Check size={17} />
           </button>
         </Modal>
       )}
