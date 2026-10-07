@@ -3,6 +3,7 @@ import { publicAssetUrl } from './assets';
 export type SpeechStatus = 'ready' | 'speaking' | 'unavailable';
 interface AudioEntry { src: string; duration: number }
 type AudioManifest = Record<string, AudioEntry>;
+const MAX_SPEECH_RATE = 1.5;
 
 /** Web Speech exposes no gender metadata. Name hints are a best-effort fallback. */
 export function selectEnglishVoice(voices: SpeechSynthesisVoice[], gender: VoiceGender): SpeechSynthesisVoice | undefined {
@@ -69,9 +70,10 @@ export class WorkoutSpeaker {
       utterance.lang = 'en-US';
       const voice = selectEnglishVoice(window.speechSynthesis.getVoices(), gender);
       if (voice) utterance.voice = voice;
-      // An estimated rate adapts long instructions to the configured prep timer.
+      // Fit when possible, but let the next cue/phase interrupt longer speech
+      // rather than making guidance too fast to follow.
       const estimate = text.trim().split(/\s+/).length / 2.8;
-      utterance.rate = Math.min(10, Math.max(preferredRate, estimate / Math.max(0.3, remaining() - 0.2)));
+      utterance.rate = Math.min(MAX_SPEECH_RATE, Math.max(preferredRate, estimate / Math.max(0.3, remaining() - 0.2)));
       utterance.onstart = () => { if (current()) this.onStatus('speaking'); };
       utterance.onend = () => { if (current()) this.onStatus('ready'); };
       utterance.onerror = event => { if (current() && event.error !== 'canceled' && event.error !== 'interrupted') this.onStatus('unavailable'); };
@@ -85,7 +87,7 @@ export class WorkoutSpeaker {
       this.audio ??= new Audio();
       const audio = this.audio;
       audio.src = publicAssetUrl(entry.src, this.baseUrl);
-      audio.playbackRate = Math.min(8, Math.max(preferredRate, entry.duration / Math.max(0.3, remaining() - 0.1)));
+      audio.playbackRate = Math.min(MAX_SPEECH_RATE, Math.max(preferredRate, entry.duration / Math.max(0.3, remaining() - 0.1)));
       audio.onended = () => { if (current()) this.onStatus('ready'); };
       audio.onerror = fallback;
       this.onStatus('speaking');

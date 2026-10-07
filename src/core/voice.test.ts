@@ -140,6 +140,43 @@ test('Web Speech fallback uses English name hints without inventing a gender met
   assert.equal(selectEnglishVoice([voice('Unknown', 'en-GB')], 'male')?.name, 'Unknown');
   assert.equal(selectEnglishVoice([voice('Andrew', 'fr-FR')], 'male'), undefined);
 });
+test('MP3 fitting and preferred settings never exceed 1.5x, and transitions still cancel playback', async () => {
+  const longClip: Manifest = { [phrase]: { src: '/audio/long.mp3', duration: 15 } };
+  const browser = mockBrowser(async () => response(longClip));
+  const statuses: SpeechStatus[] = [];
+  const speaker = new WorkoutSpeaker(status => statuses.push(status), '/');
+  try {
+    await flush();
+    for (const [seconds, preferred] of [[0.6, 1], [30, 2], [0.6, 2]]) {
+      speaker.speak(phrase, seconds, preferred);
+      assert.equal(browser.audios[0].playbackRate, 1.5);
+    }
+    speaker.speak(phrase, 30, 1.2);
+    assert.equal(browser.audios[0].playbackRate, 1.2);
+    const staleEnded = browser.audios[0].onended!;
+    speaker.cancel();
+    assert.equal(browser.audios[0].paused, true);
+    assert.equal(browser.audios[0].onended, null);
+    staleEnded();
+    assert.equal(statuses.at(-1), 'ready');
+    assert.equal(browser.utterances.length, 0);
+  } finally { speaker.dispose(); browser.restore(); }
+});
+test('Web Speech fitting and preferred settings never exceed 1.5x', async () => {
+  const browser = mockBrowser(async () => response({}));
+  const speaker = new WorkoutSpeaker(() => {}, '/');
+  const longInstruction = 'Move gently and keep your shoulders relaxed while you follow the next stretch.';
+  try {
+    await flush();
+    for (const [seconds, preferred] of [[0.6, 1], [30, 2], [0.6, 2]]) {
+      speaker.speak(longInstruction, seconds, preferred);
+      assert.equal(browser.utterances.at(-1)?.rate, 1.5);
+    }
+    speaker.speak(longInstruction, 30, 1.2);
+    assert.equal(browser.utterances.at(-1)?.rate, 1.2);
+    assert.equal(browser.utterances.length, 4);
+  } finally { speaker.dispose(); browser.restore(); }
+});
 test('a stalled manifest falls back promptly and late resolution cannot start overlapping MP3 speech', async () => {
   const loading = deferred<Response>();
   const browser = mockBrowser(async () => loading.promise);
