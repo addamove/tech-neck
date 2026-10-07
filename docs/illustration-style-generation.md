@@ -1,5 +1,7 @@
 # Female and marker illustration sets
 
+The PNG filenames below record the original generation outputs. The app now ships WebP versions at the same dimensions; original PNGs are preserved in ignored `work/image-originals/`. See [ASSETS.md](../ASSETS.md) for compression settings.
+
 Generated with the built-in image_gen tool. All 12 final PNG assets are saved in `public/art/female/` and `public/art/marker/`. Chin sheets preserve generated transparency; other sheets have white backgrounds. The app adds motion arrows and fixed chin walls separately, and uses measured crop offsets to align poses and hide neighboring sprite panels.
 
 Image 1 for each generation is the matching existing male pose sheet. Image 2 (where used) is the generated chin sheet for the corresponding style, used only for consistent character identity and drawing style. Chin generation used the aligned male chin sheet as its reference.

@@ -844,7 +844,7 @@ export default function App() {
                 >
                   <div className="badge-art">
                     <img
-                      src={publicAssetUrl(`badges/${achievement.id}.png`)}
+                      src={publicAssetUrl(`badges/${achievement.id}.webp`)}
                       alt=""
                       draggable={false}
                     />
@@ -1139,7 +1139,7 @@ export default function App() {
             className={`achievement-detail ${selectedAchievement.unlocked ? "earned" : "locked"}`}
           >
             <img
-              src={publicAssetUrl(`badges/${selectedAchievement.id}.png`)}
+              src={publicAssetUrl(`badges/${selectedAchievement.id}.webp`)}
               alt=""
             />
             <span className="achievement-detail-status">

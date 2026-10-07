@@ -255,7 +255,7 @@ export default function ExerciseArt({
           }}
         >
           <img
-            src={publicAssetUrl(`art/${art.sheet}.png`)}
+            src={publicAssetUrl(`art/${art.sheet}.webp`)}
             alt={`${title} — ${poseId.split("-").slice(-1)[0]} position. ${movement?.label ?? ""}`}
             style={{
               width: `${((art.sheetWidth ?? 1536) / width) * 100}%`,

@@ -2,7 +2,7 @@
 
 The exercise artwork was generated with the built-in image generation tool. No screenshot crops are shipped as app artwork. The supplied screenshots were used as exercise and layout references.
 
-Files are in `public/art/`. The app uses the first side-neck pose with a horizontal reflection for the opposite direction because the generated sheet duplicated the same direction. `back-v3.png` is the corrected single portrait used for the back-of-neck stretch. Rejected `back.png` and `back-v2.png` are preserved in `work/rejected-art/` and are excluded from the offline app cache.
+Shipped files are WebP images in `public/art/`. The PNG filenames in the generation notes below identify the original outputs, now preserved privately in ignored `work/image-originals/`. The app uses the first side-neck pose with a horizontal reflection for the opposite direction because the generated sheet duplicated the same direction. `back-v3.png` is the corrected single portrait used for the back-of-neck stretch. Rejected `back.png` and `back-v2.png` are preserved in `work/rejected-art/` and are excluded from the offline app cache.
 
 ## Chin tuck: fixed wall revision
 
@@ -19,6 +19,12 @@ The second generated torso is offset by 65 source pixels. `ExerciseArt.tsx` corr
 Their chin sheets contain transparent people and no wall. One deterministic SVG wall is shared by both poses in each style; the marker wall uses a thin dark outline. Measured active-frame offsets align the bodies: female 103 source pixels (crop x665), marker 160 pixels (crop x608). The initial crop isx0; both retain the same 768×1024 coordinate frame. Minor raster shape differences remain, while the wall never moves.
 
 The new snow sheets extend the T pose into the previous panel. The raster layer alone is clipped to exclude neighboring fingers. Female snow uses a constant 896×1024 frame with initial crop x−80 and active crop x640; marker uses 836×1024 with initial crop x−50 and active crop x700. This preserves body scale and centered anchors across the pair. Side-neck poses use the first tile and its reflection to preserve matching body geometry.
+
+## Image compression
+
+Sharp converts the original exercise PNGs and achievement medals to WebP without resizing or changing sprite crops. Photo-style images and medals use quality85, effort6, and alphaQuality100. All six marker illustrations use strictly lossless WebP with `exact:true`; decoded RGBA pixels, including hidden transparent RGB, are byte-for-byte identical. Every converted image is checked for unchanged dimensions and alpha before installation. Installation icons remain PNG and are optimized losslessly only when smaller. The unused original chin sheet is preserved privately and excluded from the deployed app.
+
+Run `npm run optimize:images` to create review samples, or add `-- --apply` to install all validated outputs. The script uses the original PNGs in `work/image-originals/`; see README for restoring them from the repository's original commit. Working originals, comparisons, and reports are ignored by Git and are not shipped or cached.
 
 ## Movement arrows
 

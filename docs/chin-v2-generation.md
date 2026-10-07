@@ -1,5 +1,7 @@
 # Chin tuck image regeneration
 
+The PNG filenames below record the original generation outputs. The app now ships WebP versions at the same dimensions; original PNGs are preserved in ignored `work/image-originals/`. See [ASSETS.md](../ASSETS.md) for compression settings.
+
 Generated with the built-in image_gen tool (transparent background enabled).
 
 Project asset: `public/art/chin-v2.png`.

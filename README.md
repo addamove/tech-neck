@@ -77,6 +77,20 @@ Activity, preferences, and saved workout progress are stored in localStorage on 
 
 The production build includes a web app manifest and service worker. After opening the deployed HTTPS app once, supported browsers cache the app, illustrations, medals, and voice clips for offline use. On iPhone, use Safari’s **Share → Add to Home Screen**; other browsers offer their own install action. Development mode does not register the service worker.
 
+## Optimize images
+
+`npm run optimize:images` creates four comparison samples in ignored `work/image-compression/`. `npm run optimize:images -- --apply` converts and validates all exercise images and medals, preserves original PNGs privately, and installs the WebP files. Photo-style images and medals use quality85; marker drawings use strictly lossless compression, preserving every decoded RGBA pixel. Sprite dimensions and crop coordinates remain unchanged. Icons stay PNG.
+
+The originals are not duplicated in the deployed site. On a fresh clone, restore them from the original source commit before running the utility:
+
+```sh
+mkdir -p work/image-originals
+git archive 6971858 public/art public/badges | tar -x -C work/image-originals --strip-components=1
+npm run optimize:images -- --apply
+```
+
+The installed Sharp dependency is used only by this development utility. Compression settings follow the [official Sharp WebP documentation](https://sharp.pixelplumbing.com/api-output/#webp).
+
 ## Check
 
 ```sh

@@ -29,7 +29,6 @@ export default defineConfig(({ mode }) => {
           "icon.svg",
           "icon-192.png",
           "icon-512.png",
-          "art/*.png",
         ],
         manifest: {
           name: "Tech Neck — Daily Reset",
