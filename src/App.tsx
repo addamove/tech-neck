@@ -1040,6 +1040,14 @@ export default function App() {
         </main>
       )}
       <nav className="bottom-nav" aria-label="Main navigation">
+        <span
+          className="nav-selection"
+          aria-hidden="true"
+          style={{
+            transform: `translateX(${activeScreen || tab === "train" ? 0 : tab === "activity" ? 100 : 200}%)`,
+            opacity: showAbout ? 0 : 1,
+          }}
+        />
         <button
           className={
             !showAbout && (activeScreen || tab === "train") ? "selected" : ""
