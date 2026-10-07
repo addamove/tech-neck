@@ -148,10 +148,17 @@ await writeFile(
   join(reviewDir, apply ? "report.json" : "samples.json"),
   JSON.stringify(rows, null, 2) + "\n",
 );
-const originalUrl = (path) =>
-  apply ? `/work/image-originals/${path}` : `/${path}`;
+const originalUrls = new Map();
+for (const { path } of rows) {
+  originalUrls.set(
+    path,
+    (await exists(join(originalsDir, path)))
+      ? `/work/image-originals/${path}`
+      : `/${path}`,
+  );
+}
 await writeFile(
   join(reviewDir, "index.html"),
-  `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Image compression review</title><style>body{margin:0;padding:24px;background:#eef5f3;font:14px Arial;color:#203b3b}h1{font-size:22px}section{padding:18px;background:white;border-radius:16px;margin:18px auto;max-width:1100px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:15px}figure{margin:0;text-align:center}img{width:100%;max-height:420px;object-fit:contain;background:white}figcaption{padding:10px;color:#6a8178}h2{font-size:16px}@media(max-width:600px){body{padding:10px}.pair{grid-template-columns:1fr}}</style><h1>Original PNG / compressed WebP</h1>${rows.map((row) => `<section><h2>${row.path} · ${row.width}×${row.height} · ${row.mode}</h2><div class="pair"><figure><img src="${originalUrl(row.path)}"><figcaption>Original · ${(row.before / 1024).toFixed(1)} KiB</figcaption></figure><figure><img src="/work/image-compression/${row.path.replace(/\.png$/, ".webp")}"><figcaption>WebP · ${(row.after / 1024).toFixed(1)} KiB</figcaption></figure></div></section>`).join("")}</html>`,
+  `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Image compression review</title><style>body{margin:0;padding:24px;background:#eef5f3;font:14px Arial;color:#203b3b}h1{font-size:22px}section{padding:18px;background:white;border-radius:16px;margin:18px auto;max-width:1100px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:15px}figure{margin:0;text-align:center}img{width:100%;max-height:420px;object-fit:contain;background:white}figcaption{padding:10px;color:#6a8178}h2{font-size:16px}@media(max-width:600px){body{padding:10px}.pair{grid-template-columns:1fr}}</style><h1>Original PNG / compressed WebP</h1>${rows.map((row) => `<section><h2>${row.path} · ${row.width}×${row.height} · ${row.mode}</h2><div class="pair"><figure><img src="${originalUrls.get(row.path)}"><figcaption>Original · ${(row.before / 1024).toFixed(1)} KiB</figcaption></figure><figure><img src="/work/image-compression/${row.path.replace(/\.png$/, ".webp")}"><figcaption>WebP · ${(row.after / 1024).toFixed(1)} KiB</figcaption></figure></div></section>`).join("")}</html>`,
 );
 console.log(`Review: /${reviewDir}/index.html`);
