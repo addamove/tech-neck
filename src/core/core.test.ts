@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_ROUTINE } from './config';
+import { BREATHING_GUIDANCE, DEFAULT_ROUTINE } from './config';
 import { advanceSession, completionFor, createSession, cueTimeline, getFrame, getPose, recordCompletion, skipExercise, skipPreparation } from './engine';
 import { freshData, loadData, MAX_IMPORT_BYTES, parseImport, readImport, saveData, STORAGE_KEY } from './persistence';
 import { getStats, localDateKey } from './stats';
@@ -18,15 +18,25 @@ test('chin resting boundaries switch to initial pose with two-second rests insid
   assert.equal(getPose(chin, 12).poseId, 'chin-tuck-active');
   assert.deepEqual(cueTimeline(chin).filter(cue => cue.text.includes('Rest')).map(cue => cue.atSeconds), [10, 22, 34, 46, 58]);
 });
-test('arm movements have fifteen six-second cycles, reminders leave a full cycle to speak', () => {
-  for (const exercise of DEFAULT_ROUTINE.exercises.slice(1, 4)) {
+test('arm breathing guidance occurs once after fifteen active seconds without changing visual cycles or chin reminders', () => {
+  for (const [offset, exercise] of DEFAULT_ROUTINE.exercises.slice(1, 4).entries()) {
     assert.deepEqual(exercise.poses.map(pose => pose.seconds), [3, 3]);
+    assert.deepEqual(exercise.poses.map(pose => pose.label), ['Inhale · lift your arms', 'Exhale · lower your arms']);
+    assert.equal(exercise.durationSeconds / 6, 15);
     assert.equal(getPose(exercise, 3).poseId, exercise.poses[1].poseId);
+    assert.equal(getPose(exercise, 6).poseId, exercise.poses[0].poseId);
     const cues = cueTimeline(exercise);
-    for (const cue of cues.filter(item => item.text.includes('chin'))) {
-      const next = cues.find(item => item.atSeconds > cue.atSeconds)!;
-      assert.equal(next.atSeconds - cue.atSeconds, 6);
-    }
+    assert.deepEqual(cues.filter(cue => /inhale|exhale/i.test(cue.text)), [{ atSeconds: 15, text: BREATHING_GUIDANCE }]);
+    assert.deepEqual(cues.filter(cue => cue.text.includes('chin')).map(cue => cue.atSeconds), [12, 42, 72]);
+    let prepared = createSession(DEFAULT_ROUTINE, `breathing-${offset}`);
+    for (let skipped = 0; skipped <= offset; skipped++) prepared = skipExercise(prepared, DEFAULT_ROUTINE);
+    const prepAt15 = advanceSession(prepared, 15000, DEFAULT_ROUTINE);
+    assert.equal(prepAt15.phase, 'prep');
+    const before = advanceSession(prepared, (exercise.prepSeconds + 15) * 1000 - 1, DEFAULT_ROUTINE);
+    const due = advanceSession(before, 1, DEFAULT_ROUTINE);
+    assert.equal(before.phase, 'active'); assert.equal(before.phaseElapsedMs, 14999);
+    assert.equal(due.phase, 'active'); assert.equal(due.phaseElapsedMs, 15000);
+    assert.equal(cues.filter(cue => cue.atSeconds > before.phaseElapsedMs / 1000 && cue.atSeconds <= due.phaseElapsedMs / 1000)[0]?.text, BREATHING_GUIDANCE);
   }
 });
 test('back stretch image stays fixed during rests and both sided stretches switch at exactly25 seconds', () => {

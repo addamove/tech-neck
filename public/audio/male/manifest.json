@@ -66,5 +66,9 @@
   "Walk into an open doorway. Place your arm against the side of the door with your palm facing the door. Take a small step forward with your foot. Keep your forearm touching the door.": {
     "src": "/audio/male/b48847940d72873b.mp3",
     "duration": 9.866667
+  },
+  "Inhale while lifting up. Exhale while moving down.": {
+    "src": "/audio/male/d55dcd7c069dd7b3.mp3",
+    "duration": 3.734833
   }
 }

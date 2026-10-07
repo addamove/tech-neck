@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { publicAssetUrl } from './assets';
+import { DEFAULT_ROUTINE } from './config';
+import { cueTimeline } from './engine';
 
 test('all illustration styles, badges and legacy audio resolve under both root and Pages base paths', () => {
-  for (const path of ['art/chin-v2.png', 'art/female/chin.png', 'art/marker/sides.png', 'badges/streak-3.png', 'audio/male/example.mp3']) {
+  for (const path of ['art/chin-v2.webp', 'art/female/chin.webp', 'art/marker/sides.webp', 'badges/streak-3.webp', 'audio/male/example.mp3']) {
     assert.equal(publicAssetUrl(path, '/'), `/${path}`);
     assert.equal(publicAssetUrl(`/${path}`, '/'), `/${path}`);
     assert.equal(publicAssetUrl(path, '/tech-neck/'), `/tech-neck/${path}`);
@@ -24,7 +26,10 @@ test('both shipped voice manifests reference existing deployable clips under the
   for (const manifestPath of ['audio/manifest.json', 'audio/male/manifest.json']) {
     const source = readFileSync(join('public', manifestPath), 'utf8');
     const manifest = JSON.parse(source) as Record<string, { src: string; duration: number }>;
-    assert.equal(Object.keys(manifest).length, 17);
+    for (const exercise of DEFAULT_ROUTINE.exercises) {
+      assert.ok(manifest[exercise.description], `Missing instruction: ${exercise.id}`);
+      for (const cue of cueTimeline(exercise)) assert.ok(manifest[cue.text], `Missing cue: ${cue.text}`);
+    }
     if (!femaleKeys.length) femaleKeys = Object.keys(manifest).sort();
     else assert.deepEqual(Object.keys(manifest).sort(), femaleKeys);
     for (const entry of Object.values(manifest)) {

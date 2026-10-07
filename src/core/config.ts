@@ -1,15 +1,16 @@
 import type { AppData, Exercise, Routine, VoiceCue } from './types';
 
 // Every duration, pose interval and voice deadline is declared here, in seconds.
-export const ARM_TIMING = { up: 3, down: 3, duration: 90, chinReminderCycles: [2, 7, 12] };
-// A chin reminder replaces the breathing cues for one whole six-second cycle,
-// providing time for clear speech without changing the movement tempo.
-const armsCues: VoiceCue[] = Array.from({ length: ARM_TIMING.duration / (ARM_TIMING.up + ARM_TIMING.down) }, (_, cycle) => {
-  const atSeconds = cycle * (ARM_TIMING.up + ARM_TIMING.down);
-  return ARM_TIMING.chinReminderCycles.includes(cycle)
-    ? [{ atSeconds, text: "Don't forget to tuck in your chin." }]
-    : [{ atSeconds, text: 'Inhale while lifting up.' }, { atSeconds: atSeconds + ARM_TIMING.up, text: 'Exhale while moving down.' }];
-}).flat();
+export const ARM_TIMING = { up: 3, down: 3, duration: 90, breathingReminderAtSeconds: 15, chinReminderCycles: [2, 7, 12] };
+export const BREATHING_GUIDANCE = 'Inhale while lifting up. Exhale while moving down.';
+// Voice guidance is independent of the repeating visual movement cycle.
+const armsCues: VoiceCue[] = [
+  ...ARM_TIMING.chinReminderCycles.map(cycle => ({
+    atSeconds: cycle * (ARM_TIMING.up + ARM_TIMING.down),
+    text: "Don't forget to tuck in your chin.",
+  })),
+  { atSeconds: ARM_TIMING.breathingReminderAtSeconds, text: BREATHING_GUIDANCE },
+].sort((a, b) => a.atSeconds - b.atSeconds);
 const gentleWeight = 'Allow the weight of your arms to provide a gentle stretch. Do not press down.';
 const exercises: Exercise[] = [
   {
