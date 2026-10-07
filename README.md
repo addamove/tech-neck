@@ -57,7 +57,7 @@ Level 1 includes seven exercises, in this order:
 
 Total: **8 minutes 45 seconds**, including preparation. Every completed routine earns 10 XP, including routines with skipped exercises. Work remaining excludes preparation; elapsed time includes both. Earlier completed 10-minute routines remain valid in saved history and backups.
 
-Preparation demonstrates the exercise poses every 3 seconds while keeping the 20-second countdown and spoken instructions. Pausing freezes the demonstration. Side-neck stretches last 25 seconds per side: 7 seconds stretching, 2 resting, 7 stretching, 2 resting, then 7 stretching. The right side begins immediately at 25 seconds; rests show a neutral pose without movement arrows. During a workout, bottom tabs are hidden; Back still offers pause and save/exit.
+Preparation demonstrates the exercise poses every 3 seconds while keeping the 20-second countdown and spoken instructions. The doorway chest stretch keeps its initial pose throughout preparation. Pausing freezes the other demonstrations. Side-neck stretches last 25 seconds per side: 7 seconds stretching, 2 resting, 7 stretching, 2 resting, then 7 stretching. The right side begins immediately at 25 seconds; rests show a neutral pose without movement arrows. During a workout, bottom tabs are hidden; Back still offers pause and save/exit.
 
 All timings, instructions, pose sequences, and cue schedules live in `src/core/config.ts`. To add a routine, append to `ROUTINES` and supply its static pose artwork in `src/components/ExerciseArt.tsx`.
 

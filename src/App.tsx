@@ -209,8 +209,8 @@ export default function App() {
   const activeScreen =
     !showAbout && showWorkout && session && frame && exercise;
   const finishScreen = activeScreen && session.phase === "complete";
-  // Preview each configured pose without advancing the exercise or scheduling
-  // active voice cues. The saved preparation clock also freezes this on pause.
+  // Preview poses without advancing the exercise or scheduling active cues.
+  // Doorway preparation keeps its initial pose; other demos freeze on pause.
   const preparationPoses = exercise.poses.filter(
     (pose, index, poses) =>
       poses.findIndex(
@@ -224,7 +224,7 @@ export default function App() {
     preparationPoses.findIndex((pose) => pose.poseId === exercise.prepPoseId),
   );
   const preparationStep =
-    session && frame.phase === "prep"
+    session && frame.phase === "prep" && exercise.id !== "chest"
       ? preparationPoses[
           (prepStartIndex +
             Math.floor(session.phaseElapsedMs / PREPARATION_DEMO_STEP_MS)) %

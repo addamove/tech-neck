@@ -13,6 +13,7 @@ interface PoseArt {
   wallEdge?: number;
   wallVariant?: "solid" | "sketch";
   arrowTransform?: string;
+  alignment?: { scale: number; x: number; y: number; stageWidth: number };
 }
 const MALE_POSES: Record<string, PoseArt> = {
   "chin-tuck-initial": { sheet: "chin-v2", x: 0, wall: true },
@@ -97,6 +98,50 @@ MARKER_POSES["snow-angel-down"] = {
 };
 MARKER_POSES["snow-angel-up"] = { sheet: "marker/snow", x: 700, width: 836 };
 MARKER_POSES["arm-lift-down"] = MARKER_POSES["snow-angel-down"];
+
+// Keep the existing neutral side-neck rest framing independent of arm demos.
+const SIDE_REST_ART: Record<IllustrationStyle, PoseArt> = {
+  male: { ...MALE_POSES["snow-angel-down"] },
+  female: { ...FEMALE_POSES["snow-angel-down"] },
+  marker: { ...MARKER_POSES["snow-angel-down"] },
+};
+
+// The photos have different framing despite equal sheet dimensions. Register
+// feet midpoints and head/foot height to one stage, with room for raised hands.
+// Uniform scaling preserves anatomy; the source crop still clips nearby hands.
+function alignArmPhotos(
+  poses: Record<string, PoseArt>,
+  anchors: Record<string, { scale: number; centerX: number; footY: number }>,
+  footBaseline: number,
+) {
+  for (const [poseId, anchor] of Object.entries(anchors)) {
+    poses[poseId] = {
+      ...poses[poseId],
+      alignment: {
+        scale: anchor.scale,
+        x: 448 - anchor.centerX * anchor.scale,
+        y: footBaseline - anchor.footY * anchor.scale,
+        stageWidth: 896,
+      },
+    };
+  }
+}
+alignArmPhotos(MALE_POSES, {
+  "snow-angel-down": { scale: .92, centerX: 362, footY: 934 },
+  "snow-angel-up": { scale: 828 / 901, centerX: 428, footY: 935 },
+  "bent-angel-down": { scale: 1, centerX: 383, footY: 985 },
+  "bent-angel-up": { scale: 1, centerX: 382, footY: 985 },
+  "arm-lift-down": { scale: .92, centerX: 362, footY: 934 },
+  "arm-lift-up": { scale: 1, centerX: 382, footY: 985 },
+}, 985);
+alignArmPhotos(FEMALE_POSES, {
+  "snow-angel-down": { scale: 826 / 911, centerX: 439, footY: 942 },
+  "snow-angel-up": { scale: 826 / 911, centerX: 449.5, footY: 942 },
+  "bent-angel-down": { scale: 1, centerX: 382.5, footY: 986 },
+  "bent-angel-up": { scale: 1, centerX: 381.5, footY: 986 },
+  "arm-lift-down": { scale: 826 / 911, centerX: 439, footY: 942 },
+  "arm-lift-up": { scale: 1, centerX: 381.5, footY: 986 },
+}, 986);
 const STYLE_POSES: Record<IllustrationStyle, Record<string, PoseArt>> = {
   male: MALE_POSES,
   female: FEMALE_POSES,
@@ -215,11 +260,12 @@ export default function ExerciseArt({
   const neutralSideRest =
     isRest && (poseId === "side-neck-left" || poseId === "side-neck-right");
   const art =
-    STYLE_POSES[illustrationStyle][
-      neutralSideRest ? "snow-angel-down" : poseId
-    ];
+    neutralSideRest
+      ? SIDE_REST_ART[illustrationStyle]
+      : STYLE_POSES[illustrationStyle][poseId];
   if (!art) return null;
   const width = art.width ?? 768;
+  const stageWidth = art.alignment?.stageWidth ?? width;
   const movement =
     isRest && poseId === "chin-tuck-initial"
       ? {
@@ -234,10 +280,19 @@ export default function ExerciseArt({
       <div
         className="pose-crop"
         style={{
-          aspectRatio: `${width} / ${art.height ?? 1024}`,
+          aspectRatio: `${stageWidth} / ${art.height ?? 1024}`,
           transform: art.mirror ? "scaleX(-1)" : undefined,
         }}
       >
+        <div
+          className="pose-content"
+          style={art.alignment ? {
+            width: `${width / stageWidth * 100}%`,
+            left: `${art.alignment.x / stageWidth * 100}%`,
+            top: `${art.alignment.y / (art.height ?? 1024) * 100}%`,
+            transform: `scale(${art.alignment.scale})`,
+          } : undefined}
+        >
         {art.wall && (
           <svg className="chin-wall" viewBox="0 0 768 1024" aria-hidden="true">
             <rect
@@ -318,6 +373,7 @@ export default function ExerciseArt({
             </g>
           </svg>
         )}
+        </div>
       </div>
     </div>
   );
