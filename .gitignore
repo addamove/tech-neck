@@ -1,0 +1,24 @@
+# Installed dependencies and generated builds
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Private drafts, local results and exported workout data
+work/
+outputs/
+backups/
+private/
+*.backup
+*.backup.json
+*.bak
+tech-neck-backup*.json
+tech-neck-export*.json
+
+# Local configuration, credentials and caches
+.env
+.env.*
+.venv/
+.cache/
+*.log
+.DS_Store
