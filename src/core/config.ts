@@ -1,7 +1,9 @@
-import type { AppData, Exercise, Routine, VoiceCue } from './types';
+import type { AppData, Exercise, PoseStep, Routine, VoiceCue } from './types';
+
+export const PREPARATION_DEMO_STEP_MS = 3000;
 
 // Every duration, pose interval and voice deadline is declared here, in seconds.
-export const ARM_TIMING = { up: 3, down: 3, duration: 90, breathingReminderAtSeconds: 15, chinReminderCycles: [2, 7, 12] };
+export const ARM_TIMING = { up: 3, down: 3, duration: 65, breathingReminderAtSeconds: 15, chinReminderCycles: [2, 7, 12] };
 export const BREATHING_GUIDANCE = 'Inhale while lifting up. Exhale while moving down.';
 // Voice guidance is independent of the repeating visual movement cycle.
 const armsCues: VoiceCue[] = [
@@ -10,13 +12,42 @@ const armsCues: VoiceCue[] = [
     text: "Don't forget to tuck in your chin.",
   })),
   { atSeconds: ARM_TIMING.breathingReminderAtSeconds, text: BREATHING_GUIDANCE },
-].sort((a, b) => a.atSeconds - b.atSeconds);
+].filter(cue => cue.atSeconds < ARM_TIMING.duration).sort((a, b) => a.atSeconds - b.atSeconds);
 const gentleWeight = 'Allow the weight of your arms to provide a gentle stretch. Do not press down.';
+export const SIDE_NECK_TIMING = { stretch: 7, rest: 2, duration: 50, switchSideAtSeconds: 25 };
+const sideNeckPoses: PoseStep[] = [];
+const sideCycleSeconds = SIDE_NECK_TIMING.stretch + SIDE_NECK_TIMING.rest;
+for (let at = 0; at < SIDE_NECK_TIMING.duration;) {
+  const side = at < SIDE_NECK_TIMING.switchSideAtSeconds ? 'left' : 'right';
+  const sideStartedAt = side === 'left' ? 0 : SIDE_NECK_TIMING.switchSideAtSeconds;
+  const position = (at - sideStartedAt) % sideCycleSeconds;
+  const isRest = position >= SIDE_NECK_TIMING.stretch;
+  const end = Math.min(
+    at + (isRest ? sideCycleSeconds : SIDE_NECK_TIMING.stretch) - position,
+    side === 'left' ? SIDE_NECK_TIMING.switchSideAtSeconds : SIDE_NECK_TIMING.duration,
+    SIDE_NECK_TIMING.duration,
+  );
+  sideNeckPoses.push({ poseId: `side-neck-${side}`, seconds: end - at, isRest, label: isRest ? 'Rest for two seconds' : side === 'left' ? 'Left side' : 'Right side' });
+  at = end;
+}
+let sideCueAtSeconds = 0;
+let rightSideAnnounced = false;
+const sideNeckCues: VoiceCue[] = sideNeckPoses.flatMap((pose, index) => {
+  const atSeconds = sideCueAtSeconds;
+  sideCueAtSeconds += pose.seconds;
+  if (index === 0) return [{ atSeconds, text: 'Start on your left side. Allow the weight of your arm to provide a gentle stretch. Do not press down.' }];
+  if (pose.isRest) return sideNeckPoses[index - 1].isRest ? [] : [{ atSeconds, text: 'Rest for two seconds.' }];
+  if (pose.poseId === 'side-neck-right' && !rightSideAnnounced) {
+    rightSideAnnounced = true;
+    return [{ atSeconds, text: 'Switch to your right side.' }];
+  }
+  return [{ atSeconds, text: 'Gently return to the stretch.' }];
+});
 const exercises: Exercise[] = [
   {
     id: 'chin-tuck', title: 'Chin tuck in', durationSeconds: 60, prepSeconds: 20, prepPoseId: 'chin-tuck-initial',
     description: 'Get into correct head posture by touching the back of your head to the wall. Make sure you are not simply moving your head backward and increasing the curve of the neck. This is also an improper posture. Focus on creating length in the back of the neck.',
-    poses: [{ poseId: 'chin-tuck-active', seconds: 10, label: 'Tuck your chin in' }, { poseId: 'chin-tuck-initial', seconds: 2, label: 'Rest for two seconds' }],
+    poses: [{ poseId: 'chin-tuck-active', seconds: 10, label: 'Tuck your chin in' }, { poseId: 'chin-tuck-initial', seconds: 2, label: 'Rest for two seconds', isRest: true }],
     cues: [{ atSeconds: 10, text: 'Rest for two seconds.', repeatEverySeconds: 12 }, { atSeconds: 12, text: 'Tuck your chin in.', repeatEverySeconds: 12 }],
   },
   {
@@ -37,14 +68,14 @@ const exercises: Exercise[] = [
   {
     id: 'back-neck', title: 'Stretch the back of your neck', durationSeconds: 30, prepSeconds: 20, prepPoseId: 'back-neck-stretch',
     description: 'Tilt your chin to your chest. Interlace your fingers and place them behind your head. Allow the weight of your arms to apply gentle downward pressure on your head and stretch the back of your neck.',
-    poses: [{ poseId: 'back-neck-stretch', seconds: 10, label: 'Let the weight of your arms stretch your neck' }, { poseId: 'back-neck-stretch', seconds: 2, label: 'Rest for two seconds' }],
+    poses: [{ poseId: 'back-neck-stretch', seconds: 10, label: 'Let the weight of your arms stretch your neck' }, { poseId: 'back-neck-stretch', seconds: 2, label: 'Rest for two seconds', isRest: true }],
     cues: [{ atSeconds: 0, text: gentleWeight }, { atSeconds: 10, text: 'Rest for two seconds.', repeatEverySeconds: 12 }, { atSeconds: 12, text: 'Gently return to the stretch.', repeatEverySeconds: 12 }],
   },
   {
-    id: 'side-neck', title: 'Stretch sides of your neck', durationSeconds: 50, prepSeconds: 20, prepPoseId: 'side-neck-left',
+    id: 'side-neck', title: 'Stretch sides of your neck', durationSeconds: SIDE_NECK_TIMING.duration, prepSeconds: 20, prepPoseId: 'side-neck-left',
     description: 'Bring your ear to your shoulder. Rest your hand on the side of your head and allow the weight of your arm to gently pull, stretching the side of your neck.',
-    poses: [{ poseId: 'side-neck-left', seconds: 25, label: 'Left side' }, { poseId: 'side-neck-right', seconds: 25, label: 'Right side' }],
-    cues: [{ atSeconds: 0, text: 'Start on your left side. Allow the weight of your arm to provide a gentle stretch. Do not press down.' }, { atSeconds: 25, text: 'Switch to your right side.' }],
+    poses: sideNeckPoses,
+    cues: sideNeckCues,
   },
   {
     id: 'chest', title: 'Stretch your chest muscles', durationSeconds: 50, prepSeconds: 20, prepPoseId: 'chest-left',

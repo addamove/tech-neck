@@ -156,7 +156,13 @@ const MOVEMENTS: Record<string, Movement> = {
     ],
   },
   "bent-angel-up": lowerFromOverhead,
-  "arm-lift-down": raiseArms,
+  "arm-lift-down": {
+    label: "Lift your arms straight up. Inhale as you lift.",
+    arrows: [
+      { path: "M125 470V347", head: "M125 315L105 347H145Z" },
+      { path: "M625 470V347", head: "M625 315L605 347H645Z" },
+    ],
+  },
   "arm-lift-up": lowerFromOverhead,
   "back-neck-stretch": {
     label:
@@ -206,7 +212,12 @@ export default function ExerciseArt({
   isRest?: boolean;
   illustrationStyle?: IllustrationStyle;
 }) {
-  const art = STYLE_POSES[illustrationStyle][poseId];
+  const neutralSideRest =
+    isRest && (poseId === "side-neck-left" || poseId === "side-neck-right");
+  const art =
+    STYLE_POSES[illustrationStyle][
+      neutralSideRest ? "snow-angel-down" : poseId
+    ];
   if (!art) return null;
   const width = art.width ?? 768;
   const movement =
@@ -215,7 +226,7 @@ export default function ExerciseArt({
           label: "Relax and let your head return to the starting position.",
           arrows: [{ path: "M575 225H653", head: "M685 225L653 205V245Z" }],
         }
-      : isRest && poseId === "back-neck-stretch"
+      : isRest && (poseId === "back-neck-stretch" || neutralSideRest)
         ? { label: "Rest for two seconds. Release the stretch.", arrows: [] }
         : MOVEMENTS[poseId];
   return (
@@ -256,7 +267,7 @@ export default function ExerciseArt({
         >
           <img
             src={publicAssetUrl(`art/${art.sheet}.webp`)}
-            alt={`${title} — ${poseId.split("-").slice(-1)[0]} position. ${movement?.label ?? ""}`}
+            alt={`${title} — ${neutralSideRest ? "neutral resting" : poseId.split("-").slice(-1)[0]} position. ${movement?.label ?? ""}`}
             style={{
               width: `${((art.sheetWidth ?? 1536) / width) * 100}%`,
               left: `${(-art.x / width) * 100}%`,

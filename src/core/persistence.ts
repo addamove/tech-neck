@@ -1,8 +1,18 @@
 import { DEFAULT_DATA, ROUTINES } from './config';
-import type { AppData, Completion, Session } from './types';
+import type { AppData, Completion, Exercise, Routine, Session } from './types';
 
 export const STORAGE_KEY = 'tech-neck:v1';
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+// Version1 backups used90-second arm exercises. Keep their actual elapsed
+// times valid when loading history after the routine is shortened.
+const legacyArmIds = new Set(['snow-angel', 'bent-angel', 'arm-lift']);
+function maximumWorkSeconds(routine: Routine, exercise: Exercise): number {
+  return routine.id === 'level-1' && legacyArmIds.has(exercise.id)
+    ? Math.max(90, exercise.durationSeconds) : exercise.durationSeconds;
+}
+function maximumElapsedMs(routine: Routine): number {
+  return routine.exercises.reduce((sum, exercise) => sum + exercise.prepSeconds + maximumWorkSeconds(routine, exercise), 0) * 1000;
+}
 function fail(message: string): never { throw new Error(`Invalid backup: ${message}`); }
 function object(value: unknown, label: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) fail(`${label} must be an object.`);
@@ -28,10 +38,11 @@ function validateSession(value: unknown): Session {
   number(item.exerciseIndex, 'exerciseIndex', 0, routine.exercises.length - 1);
   if (!Number.isInteger(item.exerciseIndex)) fail('exerciseIndex must be an integer.');
   const exercise = routine.exercises[item.exerciseIndex];
-  number(item.phaseElapsedMs, 'phaseElapsedMs', 0, (item.phase === 'prep' ? exercise.prepSeconds : exercise.durationSeconds) * 1000);
-  number(item.elapsedMs, 'elapsedMs', 0, routine.exercises.reduce((sum, ex) => sum + ex.prepSeconds + ex.durationSeconds, 0) * 1000);
+  const maximumPhaseMs = (item.phase === 'prep' ? exercise.prepSeconds : maximumWorkSeconds(routine, exercise)) * 1000;
+  number(item.phaseElapsedMs, 'phaseElapsedMs', 0, maximumPhaseMs);
+  number(item.elapsedMs, 'elapsedMs', 0, maximumElapsedMs(routine));
   if (item.phaseElapsedMs > item.elapsedMs) fail('Phase elapsed time cannot exceed total time.');
-  if (item.phase !== 'complete' && item.phaseElapsedMs >= (item.phase === 'prep' ? exercise.prepSeconds : exercise.durationSeconds) * 1000) fail('Session phase has already ended.');
+  if (item.phase !== 'complete' && item.phaseElapsedMs >= maximumPhaseMs) fail('Session phase has already ended.');
   boolean(item.paused, 'paused');
   const validIds = routine.exercises.map(ex => ex.id);
   const skipped = exerciseIds(item.skippedExerciseIds, 'skippedExerciseIds', validIds);
@@ -41,13 +52,19 @@ function validateSession(value: unknown): Session {
   const expectedCount = item.phase === 'complete' ? routine.exercises.length : item.exerciseIndex;
   if (progressedIds.length !== expectedCount || validIds.slice(0, expectedCount).some(id => !progressedIds.includes(id))) fail('Session exercise progress is inconsistent.');
   if (item.phase === 'complete' && (item.exerciseIndex !== routine.exercises.length - 1 || item.phaseElapsedMs !== 0)) fail('Completed session is inconsistent.');
-  return { id: item.id, routineId: routine.id, startedAt: item.startedAt, phase: item.phase as Session['phase'], exerciseIndex: item.exerciseIndex, phaseElapsedMs: item.phaseElapsedMs, elapsedMs: item.elapsedMs, paused: item.paused, skippedExerciseIds: skipped, completedExerciseIds: completed };
+  const session: Session = { id: item.id, routineId: routine.id, startedAt: item.startedAt, phase: item.phase as Session['phase'], exerciseIndex: item.exerciseIndex, phaseElapsedMs: item.phaseElapsedMs, elapsedMs: item.elapsedMs, paused: item.paused, skippedExerciseIds: skipped, completedExerciseIds: completed };
+  if (session.phase === 'active' && session.phaseElapsedMs >= exercise.durationSeconds * 1000 && routine.id === 'level-1' && legacyArmIds.has(exercise.id)) {
+    // The old session already did the shortened exercise. Preserve the time
+    // actually spent and wait at the next preparation without running it.
+    return { ...session, phase: 'prep', exerciseIndex: session.exerciseIndex + 1, phaseElapsedMs: 0, paused: true, completedExerciseIds: [...completed, exercise.id] };
+  }
+  return session;
 }
 function validateCompletion(value: unknown): Completion {
   const item = object(value, 'completion'); const routine = routineFor(item.routineId);
   text(item.id, 'completion.id'); date(item.startedAt, 'startedAt'); date(item.completedAt, 'completedAt');
   if (Date.parse(item.completedAt) < Date.parse(item.startedAt)) fail('Completion precedes workout start.');
-  number(item.elapsedMs, 'elapsedMs', 0, routine.exercises.reduce((sum, ex) => sum + ex.durationSeconds + ex.prepSeconds, 0) * 1000);
+  number(item.elapsedMs, 'elapsedMs', 0, maximumElapsedMs(routine));
   if (item.xp !== routine.xp) fail('Invalid completion XP.');
   const ids = routine.exercises.map(ex => ex.id);
   const skipped = exerciseIds(item.skippedExerciseIds, 'skippedExerciseIds', ids);

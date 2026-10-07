@@ -55,6 +55,45 @@ svg {
   overflow: hidden;
   box-shadow: 0 0 70px #123e3410;
 }
+.mobile-only-screen {
+  display: none;
+}
+.mobile-only-card {
+  max-width: 390px;
+  padding: 38px 32px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 12px 48px #174c3810;
+  text-align: center;
+}
+.mobile-only-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 20px;
+  border-radius: 20px;
+  background: var(--light);
+  color: var(--deep);
+}
+.mobile-only-brand {
+  margin-bottom: 12px;
+  color: var(--deep);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+.mobile-only-card h1 {
+  margin-bottom: 14px;
+  font-size: 25px;
+  line-height: 1.25;
+  letter-spacing: -0.6px;
+}
+.mobile-only-card > p:last-child {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
 .topbar {
   height: 74px;
   padding: 14px 25px;
@@ -1081,6 +1120,22 @@ svg {
     bottom: calc(32px + env(safe-area-inset-bottom));
   }
 }
+@media (min-width: 768px) {
+  body {
+    padding: 0;
+  }
+  .app-shell,
+  .dialog,
+  .dialog::backdrop {
+    display: none;
+  }
+  .mobile-only-screen {
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    padding: 32px;
+  }
+}
 @media (max-width: 360px) {
   .home-screen {
     padding: 27px 28px 125px;
@@ -1162,6 +1217,101 @@ svg {
   margin-top: 34px;
   padding-top: 24px;
   border-top: 1px solid #edf0ef;
+}
+.activity-patterns {
+  margin: 28px 0;
+}
+.activity-patterns > h2 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -.3px;
+}
+.activity-patterns > p {
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.activity-chart {
+  margin: 16px 0 0;
+  padding: 17px 13px 12px;
+  border: 1px solid #e7f1ed;
+  border-radius: 16px;
+  background: #fcfefd;
+}
+.activity-chart h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.activity-chart figcaption > span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.activity-chart > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 14px;
+  overflow: visible;
+}
+.chart-grid line {
+  stroke: #e5eeeb;
+  stroke-width: 1;
+}
+.chart-grid text,
+.chart-axis {
+  fill: #7c918c;
+  font-size: 11px;
+}
+.chart-bar {
+  fill: #49bfb1;
+}
+.chart-frequency-line {
+  fill: none;
+  stroke: #22ad9e;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.chart-point {
+  fill: #22ad9e;
+  stroke: #fcfefd;
+  stroke-width: 1;
+}
+.chart-counts {
+  margin-top: 6px;
+  font-size: 10px;
+  color: #718c85;
+}
+.chart-counts summary {
+  width: fit-content;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.chart-counts summary:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.chart-counts table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.chart-counts th,
+.chart-counts td {
+  padding: 5px 3px;
+  border-bottom: 1px solid #e7f1ed;
+  font-weight: 400;
+}
+.chart-counts th:last-child,
+.chart-counts td:last-child {
+  text-align: right;
 }
 .achievements-heading {
   display: flex;
@@ -1291,6 +1441,39 @@ svg {
   flex-direction: column;
   align-items: center;
   margin: -5px 0 18px;
+}
+.achievement-confetti {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+.achievement-confetti > span {
+  position: absolute;
+  top: -18px;
+  left: var(--confetti-left);
+  width: 7px;
+  height: 11px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: achievement-confetti-fall var(--confetti-duration) cubic-bezier(.16, .45, .55, 1) var(--confetti-delay) forwards;
+}
+.achievement-confetti > span:nth-child(3n) {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+@keyframes achievement-confetti-fall {
+  0% { transform: translate3d(0, -12px, 0) rotate(0deg); opacity: 0; }
+  8% { opacity: .95; }
+  75% { opacity: .85; }
+  100% { transform: translate3d(var(--confetti-drift), calc(100dvh + 30px), 0) rotate(var(--confetti-turn)); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .achievement-confetti {
+    display: none;
+  }
 }
 .achievement-detail > img {
   width: 155px;

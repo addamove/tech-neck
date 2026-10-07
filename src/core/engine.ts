@@ -15,7 +15,7 @@ export function advanceSession(session: Session, deltaMs: number, routine: Routi
   while (remaining > 0 && result.phase !== 'complete') {
     const exercise = routine.exercises[result.exerciseIndex];
     const duration = (result.phase === 'prep' ? exercise.prepSeconds : exercise.durationSeconds) * 1000;
-    const consumed = Math.min(remaining, duration - result.phaseElapsedMs);
+    const consumed = Math.max(0, Math.min(remaining, duration - result.phaseElapsedMs));
     result = { ...result, phaseElapsedMs: result.phaseElapsedMs + consumed, elapsedMs: result.elapsedMs + consumed };
     remaining -= consumed;
     if (result.phaseElapsedMs >= duration) {

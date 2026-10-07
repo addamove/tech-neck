@@ -17,6 +17,7 @@ import {
   RotateCcw,
   Settings2,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Trophy,
   Upload,
@@ -28,11 +29,16 @@ import { useWorkout } from "./core/useWorkout";
 import { readImport } from "./core/persistence";
 import { completedHistory } from "./core/history";
 import { getStats } from "./core/stats";
+import { getActivityCharts } from "./core/activityCharts";
 import { getPose } from "./core/engine";
+import { PREPARATION_DEMO_STEP_MS } from "./core/config";
 import { publicAssetUrl } from "./core/assets";
 import type { AppData } from "./core/types";
 import ExerciseArt from "./components/ExerciseArt";
 import AboutPage from "./components/AboutPage";
+import ActivityCharts from "./components/ActivityCharts";
+import AchievementConfetti from "./components/AchievementConfetti";
+import { achievementSnapshot, newlyEarnedAchievements, type AchievementSnapshot } from "./components/achievementCelebration";
 
 type Tab = "train" | "activity" | "settings";
 const formatTime = (seconds: number) =>
@@ -143,6 +149,32 @@ export default function App() {
   const selectedAchievement = achievements.find(
     (item) => item.id === selectedAchievementId,
   );
+  const celebrationBaseline = useRef<AchievementSnapshot | null>(null);
+  const importingBackup = useRef(false);
+  const [celebrationQueue, setCelebrationQueue] = useState<string[]>([]);
+  const [celebratingAchievementId, setCelebratingAchievementId] = useState<string | null>(null);
+  useEffect(() => {
+    const current = achievementSnapshot(session, data.completions);
+    const newlyEarned = importingBackup.current
+      ? []
+      : newlyEarnedAchievements(celebrationBaseline.current, current);
+    celebrationBaseline.current = current;
+    if (newlyEarned.length)
+      setCelebrationQueue((queue) => [...queue, ...newlyEarned.filter((id) => !queue.includes(id))]);
+  }, [session, data.completions, achievements]);
+  useEffect(() => {
+    if (dialog !== null || !celebrationQueue.length) return;
+    const nextId = celebrationQueue[0];
+    setSelectedAchievementId(nextId);
+    setCelebratingAchievementId(nextId);
+    setDialog("achievement");
+  }, [dialog, celebrationQueue]);
+  const closeAchievement = () => {
+    if (celebratingAchievementId)
+      setCelebrationQueue((queue) => queue.filter((id) => id !== celebratingAchievementId));
+    setCelebratingAchievementId(null);
+    setDialog(null);
+  };
   const [importPreview, setImportPreview] = useState<{
     file: File;
     data: AppData;
@@ -177,11 +209,42 @@ export default function App() {
   const activeScreen =
     !showAbout && showWorkout && session && frame && exercise;
   const finishScreen = activeScreen && session.phase === "complete";
+  // Preview each configured pose without advancing the exercise or scheduling
+  // active voice cues. The saved preparation clock also freezes this on pause.
+  const preparationPoses = exercise.poses.filter(
+    (pose, index, poses) =>
+      poses.findIndex(
+        (candidate) =>
+          candidate.poseId === pose.poseId &&
+          Boolean(candidate.isRest) === Boolean(pose.isRest),
+      ) === index,
+  );
+  const prepStartIndex = Math.max(
+    0,
+    preparationPoses.findIndex((pose) => pose.poseId === exercise.prepPoseId),
+  );
+  const preparationStep =
+    session && frame.phase === "prep"
+      ? preparationPoses[
+          (prepStartIndex +
+            Math.floor(session.phaseElapsedMs / PREPARATION_DEMO_STEP_MS)) %
+            preparationPoses.length
+        ]
+      : null;
+  const displayPoseId = preparationStep?.poseId ?? frame.poseId;
+  const currentPose =
+    preparationStep ??
+    (session && frame.phase === "active"
+      ? getPose(exercise, session.phaseElapsedMs / 1000)
+      : null);
   const isRest = Boolean(
+    currentPose?.isRest &&
     session &&
-    frame.phase === "active" &&
-    (exercise.id === "chin-tuck" || exercise.id === "back-neck") &&
-    getPose(exercise, session.phaseElapsedMs / 1000) === exercise.poses[1],
+    // The first initial chin pose shows the upcoming tuck; later initial
+    // poses demonstrate the return movement between repetitions.
+    (frame.phase !== "prep" ||
+      exercise.id !== "chin-tuck" ||
+      session.phaseElapsedMs >= PREPARATION_DEMO_STEP_MS),
   );
   const start = () => {
     workout.start();
@@ -340,14 +403,20 @@ export default function App() {
   };
   const confirmImport = async () => {
     if (!importPreview) return;
+    importingBackup.current = true;
     try {
       await workout.importData(importPreview.file);
+      celebrationBaseline.current = null;
+      setCelebrationQueue([]);
+      setCelebratingAchievementId(null);
       setDialog(null);
       setImportPreview(null);
       setShowWorkout(false);
       setNotice("Your backup has been restored.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Import failed.");
+    } finally {
+      importingBackup.current = false;
     }
   };
   // The hook refreshes stats on minute/focus/midnight boundaries. Reuse that
@@ -358,6 +427,10 @@ export default function App() {
   );
   const recentHistory = useMemo(
     () => completedHistory(data.completions).slice().reverse().slice(0, 5),
+    [data.completions, stats],
+  );
+  const activityCharts = useMemo(
+    () => getActivityCharts(data.completions),
     [data.completions, stats],
   );
   const completionsByDay = new Map(
@@ -378,6 +451,17 @@ export default function App() {
     setMonth(new Date(month.getFullYear(), month.getMonth() + amount, 1));
 
   return (
+    <>
+    <main className="mobile-only-screen">
+      <div className="mobile-only-card">
+        <span className="mobile-only-icon" aria-hidden="true">
+          <Smartphone size={30} strokeWidth={1.7} />
+        </span>
+        <p className="mobile-only-brand">tech neck</p>
+        <h1>Made for your mobile screen</h1>
+        <p>Tech Neck currently supports mobile screen sizes only. Open it on your phone or use a narrower window.</p>
+      </div>
+    </main>
     <div className={`app-shell ${activeScreen ? "session-shell" : ""}`}>
       <header className="topbar">
         {showAbout ? (
@@ -524,7 +608,7 @@ export default function App() {
               </button>
             </div>
             <ExerciseArt
-              poseId={frame.poseId}
+              poseId={displayPoseId}
               title={exercise.title}
               isRest={isRest}
               illustrationStyle={settings.illustrationStyle}
@@ -785,6 +869,7 @@ export default function App() {
           <p className="calendar-legend">
             <span /> A day you made time for yourself
           </p>
+          <ActivityCharts data={activityCharts} />
           {stats.totalSessions === 0 ? (
             <div className="empty-activity">
               <p>Your first reset is the start of a good habit.</p>
@@ -838,6 +923,7 @@ export default function App() {
                   className={`achievement-card ${achievement.unlocked ? "earned" : "locked"}`}
                   aria-label={`${achievement.title}. ${achievement.unlocked ? "Earned" : "Locked"}. ${achievement.criterion}. Progress ${achievement.progress} of ${achievement.target}.`}
                   onClick={() => {
+                    setCelebratingAchievementId(null);
                     setSelectedAchievementId(achievement.id);
                     setDialog("achievement");
                   }}
@@ -1136,9 +1222,13 @@ export default function App() {
       )}
       {dialog === "achievement" && selectedAchievement && (
         <Modal
+          key={selectedAchievement.id}
           title={selectedAchievement.title}
-          onClose={() => setDialog(null)}
+          onClose={closeAchievement}
         >
+          {celebratingAchievementId === selectedAchievement.id && (
+            <AchievementConfetti key={selectedAchievement.id} />
+          )}
           <div
             className={`achievement-detail ${selectedAchievement.unlocked ? "earned" : "locked"}`}
           >
@@ -1153,7 +1243,9 @@ export default function App() {
                 <LockKeyhole size={15} />
               )}{" "}
               {selectedAchievement.unlocked
-                ? "Milestone earned"
+                ? celebratingAchievementId === selectedAchievement.id
+                  ? "Well done — you earned this milestone!"
+                  : "Milestone earned"
                 : "A milestone ahead"}
             </span>
           </div>
@@ -1176,7 +1268,7 @@ export default function App() {
               )}
             </p>
           )}
-          <button className="primary-button" onClick={() => setDialog(null)}>
+          <button className="primary-button" onClick={closeAchievement}>
             Keep going
             <Check size={17} />
           </button>
@@ -1275,6 +1367,7 @@ export default function App() {
         </Modal>
       )}
     </div>
+    </>
   );
 }
 

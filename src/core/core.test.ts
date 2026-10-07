@@ -5,10 +5,11 @@ import { advanceSession, completionFor, createSession, cueTimeline, getFrame, ge
 import { freshData, loadData, MAX_IMPORT_BYTES, parseImport, readImport, saveData, STORAGE_KEY } from './persistence';
 import { getStats, localDateKey } from './stats';
 
-test('final routine has 460 seconds work, 140 preparation and exact seven exercise lengths', () => {
-  assert.deepEqual(DEFAULT_ROUTINE.exercises.map(item => item.durationSeconds), [60, 90, 90, 90, 30, 50, 50]);
+test('final routine has 385 seconds work, 140 preparation and three 65-second arm exercises', () => {
+  assert.deepEqual(DEFAULT_ROUTINE.exercises.map(item => item.durationSeconds), [60, 65, 65, 65, 30, 50, 50]);
+  assert.deepEqual(DEFAULT_ROUTINE.exercises.map(item => item.prepSeconds), [20, 20, 20, 20, 20, 20, 20]);
   const frame = getFrame(null, DEFAULT_ROUTINE);
-  assert.equal(frame.workRemainingSeconds, 460); assert.equal(frame.totalRemainingSeconds, 600);
+  assert.equal(frame.workRemainingSeconds, 385); assert.equal(frame.totalRemainingSeconds, 525);
 });
 test('chin resting boundaries switch to initial pose with two-second rests inside total duration', () => {
   const chin = DEFAULT_ROUTINE.exercises[0];
@@ -22,12 +23,13 @@ test('arm breathing guidance occurs once after fifteen active seconds without ch
   for (const [offset, exercise] of DEFAULT_ROUTINE.exercises.slice(1, 4).entries()) {
     assert.deepEqual(exercise.poses.map(pose => pose.seconds), [3, 3]);
     assert.deepEqual(exercise.poses.map(pose => pose.label), ['Inhale · lift your arms', 'Exhale · lower your arms']);
-    assert.equal(exercise.durationSeconds / 6, 15);
+    assert.equal(exercise.durationSeconds, 65);
     assert.equal(getPose(exercise, 3).poseId, exercise.poses[1].poseId);
     assert.equal(getPose(exercise, 6).poseId, exercise.poses[0].poseId);
     const cues = cueTimeline(exercise);
     assert.deepEqual(cues.filter(cue => /inhale|exhale/i.test(cue.text)), [{ atSeconds: 15, text: BREATHING_GUIDANCE }]);
-    assert.deepEqual(cues.filter(cue => cue.text.includes('chin')).map(cue => cue.atSeconds), [12, 42, 72]);
+    assert.deepEqual(cues.filter(cue => cue.text.includes('chin')).map(cue => cue.atSeconds), [12, 42]);
+    assert.ok(exercise.cues.every(cue => cue.atSeconds < 65));
     let prepared = createSession(DEFAULT_ROUTINE, `breathing-${offset}`);
     for (let skipped = 0; skipped <= offset; skipped++) prepared = skipExercise(prepared, DEFAULT_ROUTINE);
     const prepAt15 = advanceSession(prepared, 15000, DEFAULT_ROUTINE);
@@ -37,6 +39,12 @@ test('arm breathing guidance occurs once after fifteen active seconds without ch
     assert.equal(before.phase, 'active'); assert.equal(before.phaseElapsedMs, 14999);
     assert.equal(due.phase, 'active'); assert.equal(due.phaseElapsedMs, 15000);
     assert.equal(cues.filter(cue => cue.atSeconds > before.phaseElapsedMs / 1000 && cue.atSeconds <= due.phaseElapsedMs / 1000)[0]?.text, BREATHING_GUIDANCE);
+    const finalMoment = advanceSession(prepared, (exercise.prepSeconds + 65) * 1000 - 1, DEFAULT_ROUTINE);
+    assert.equal(finalMoment.phase, 'active'); assert.equal(finalMoment.phaseElapsedMs, 64999);
+    const nextExercise = advanceSession(finalMoment, 1, DEFAULT_ROUTINE);
+    assert.equal(nextExercise.phase, 'prep'); assert.equal(nextExercise.exerciseIndex, finalMoment.exerciseIndex + 1);
+    assert.equal(nextExercise.phaseElapsedMs, 0);
+    assert.ok(nextExercise.completedExerciseIds.includes(exercise.id));
   }
 });
 test('back stretch image stays fixed during rests and both sided stretches switch at exactly25 seconds', () => {
@@ -56,7 +64,7 @@ test('timer consumes overshoot across prep/work boundaries and never counts past
   const second = advanceSession(initial, 80750, DEFAULT_ROUTINE);
   assert.equal(second.phase, 'prep'); assert.equal(second.exerciseIndex, 1); assert.equal(second.phaseElapsedMs, 750);
   const done = advanceSession(initial, 9999999, DEFAULT_ROUTINE);
-  assert.equal(done.phase, 'complete'); assert.equal(done.elapsedMs, 600000);
+  assert.equal(done.phase, 'complete'); assert.equal(done.elapsedMs, 525000);
   assert.equal(done.completedExerciseIds.length, 7);
   assert.equal(advanceSession(done, 100000, DEFAULT_ROUTINE), done);
 });

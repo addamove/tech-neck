@@ -1,4 +1,4 @@
-export interface PoseStep { poseId: string; seconds: number; label: string }
+export interface PoseStep { poseId: string; seconds: number; label: string; isRest?: boolean }
 export interface VoiceCue { atSeconds: number; text: string; repeatEverySeconds?: number }
 export interface Exercise {
   id: string; title: string; description: string; durationSeconds: number; prepSeconds: number;

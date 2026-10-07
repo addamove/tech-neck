@@ -91,23 +91,27 @@ export function useWorkout(options: { routineId?: string } = {}) {
     speakerRef.current?.speak(cue.text, deadline - elapsed, data.settings.voiceRate, data.settings.voiceGender);
   }, [session, exercise, running, data.settings.voiceEnabled, data.settings.voiceRate, data.settings.voiceGender, speakPreparation]);
 
-  const lastSaved = useRef({ data, at: 0 });
+  const lastSaved = useRef({ data, at: 0, trusted: !initial.error });
   useEffect(() => {
+    // A failed read must leave the original backup intact, including when
+    // fresh fallback settings change. Only a validated import can replace it.
+    if (initial.error && lastSaved.current.trusted !== true) return;
     if (lastSaved.current.data === data) return;
     const previous = lastSaved.current.data;
     const urgent = previous.settings !== data.settings || previous.completions !== data.completions || previous.session?.paused !== data.session?.paused || previous.session?.phase !== data.session?.phase || previous.session?.exerciseIndex !== data.session?.exerciseIndex || previous.session?.id !== data.session?.id;
     if (!urgent && Date.now() - lastSaved.current.at < 1000) return;
-    try { saveData(window.localStorage, data); lastSaved.current = { data, at: Date.now() }; setStorageError(null); }
+    try { saveData(window.localStorage, data); lastSaved.current = { data, at: Date.now(), trusted: true }; setStorageError(null); }
     catch (error) { setStorageError(error instanceof Error ? error.message : 'Device storage is unavailable.'); }
-  }, [data]);
+  }, [data, initial.error]);
   useEffect(() => {
     const saveBeforeClose = () => {
+      if (initial.error && lastSaved.current.trusted !== true) return;
       try { const current = dataRef.current; saveData(window.localStorage, { ...current, session: current.session ? { ...current.session, paused: true } : null }); }
       catch { /* The existing in-app storage message already provides recovery guidance. */ }
     };
     window.addEventListener('pagehide', saveBeforeClose);
     return () => window.removeEventListener('pagehide', saveBeforeClose);
-  }, []);
+  }, [initial.error]);
 
   const start = useCallback((routineId?: string) => {
     const current = dataRef.current;
@@ -159,7 +163,7 @@ export function useWorkout(options: { routineId?: string } = {}) {
     // One storage write after complete validation. Failed writes leave current state intact.
     saveData(window.localStorage, imported);
     speakerRef.current?.cancel(); speechPhase.current = ''; cueElapsed.current = -1;
-    lastSaved.current = { data: imported, at: Date.now() };
+    lastSaved.current = { data: imported, at: Date.now(), trusted: true };
     setData(imported); setStorageError(null);
   }, []);
   const resetStats = useCallback(() => setData(previous => ({ ...previous, completions: [], session: previous.session?.phase === 'complete' ? null : previous.session })), []);
