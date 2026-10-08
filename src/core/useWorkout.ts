@@ -87,7 +87,7 @@ export function useWorkout(options: { routineId?: string } = {}) {
     }
     if (session.phase !== 'prep' && session.phase !== 'active') return;
     const elapsed = session.phaseElapsedMs / 1000;
-    const timeline = session.phase === 'prep' ? preparationVoiceTimeline(exercise) : activeVoiceTimeline(exercise);
+    const timeline = session.phase === 'prep' ? preparationVoiceTimeline(exercise) : activeVoiceTimeline(exercise, session.id);
     const duration = session.phase === 'prep' ? exercise.prepSeconds : exercise.durationSeconds;
     const cue = dueVoiceCue(timeline, cueElapsed.current, elapsed, duration);
     cueElapsed.current = elapsed;

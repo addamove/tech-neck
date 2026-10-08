@@ -6,6 +6,7 @@ import { publicAssetUrl } from './assets';
 import { DEFAULT_ROUTINE } from './config';
 import { cueTimeline } from './engine';
 import { COUNTDOWN_CUES, CUE_SLOT_SECONDS, EXERCISE_START_CUE } from './voiceTiming';
+import { CHIN_FOCUS_TIP, CHIN_SHOULDERS_TIP, CHIN_TIP_TIMING } from './chinTips';
 
 test('all illustration styles, badges and legacy audio resolve under both root and Pages base paths', () => {
   for (const path of ['art/chin-v2.webp', 'art/female/chin.webp', 'art/marker/sides.webp', 'badges/streak-3.webp', 'audio/male/example.mp3']) {
@@ -34,6 +35,10 @@ test('both shipped voice manifests reference existing deployable clips under the
     for (const text of [...COUNTDOWN_CUES, EXERCISE_START_CUE]) {
       assert.ok(manifest[text], `Missing countdown clip: ${text}`);
       assert.ok(manifest[text].duration <= CUE_SLOT_SECONDS - 0.1, `Countdown clip exceeds its slot: ${text}`);
+    }
+    for (const [text, seconds] of [[CHIN_FOCUS_TIP, CHIN_TIP_TIMING.focusSeconds], [CHIN_SHOULDERS_TIP, CHIN_TIP_TIMING.shouldersSeconds]] as const) {
+      assert.ok(manifest[text], `Missing chin guidance: ${text}`);
+      assert.ok(manifest[text].duration <= seconds, `Chin guidance exceeds its reserved hold: ${text}`);
     }
     if (!femaleKeys.length) femaleKeys = Object.keys(manifest).sort();
     else assert.deepEqual(Object.keys(manifest).sort(), femaleKeys);

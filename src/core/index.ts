@@ -6,4 +6,5 @@ export * from './stats';
 export * from './achievements';
 export * from './activityCharts';
 export * from './voiceTiming';
+export * from './chinTips';
 export * from './useWorkout';

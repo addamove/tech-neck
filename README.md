@@ -47,7 +47,7 @@ Level 1 includes seven exercises, in this order:
 
 | Exercise | Work | Preparation |
 | --- | ---: | ---: |
-| Chin tuck in | 60 s | 20 s |
+| Chin tuck in | 58 s | 20 s |
 | Snow angel on the wall | 65 s | 20 s |
 | Snow angel with bent elbows | 65 s | 20 s |
 | Lifting arms with correct head posture | 65 s | 20 s |
@@ -55,11 +55,13 @@ Level 1 includes seven exercises, in this order:
 | Stretch sides of your neck | 50 s | 20 s |
 | Stretch your chest muscles | 50 s | 20 s |
 
-Total: **8 minutes 45 seconds**, including preparation. Every completed routine earns 10 XP, including routines with skipped exercises. Work remaining excludes preparation; elapsed time includes both. Earlier completed 10-minute routines remain valid in saved history and backups.
+Total: **8 minutes 43 seconds**, including preparation. Chin tucks keep the 10-second holds and 2-second rests between them, ending on the last hold without a trailing rest. Every completed routine earns 10 XP, including routines with skipped exercises. Work remaining excludes preparation; elapsed time includes both. Earlier completed 8:45 and 10-minute routines remain valid in saved history and backups.
 
 Preparation demonstrates the exercise poses every 3 seconds while keeping the 20-second countdown and spoken instructions. The doorway chest stretch keeps its initial pose throughout preparation. Pausing freezes the other demonstrations. Side-neck stretches last 25 seconds per side: 7 seconds stretching, 2 resting, 7 stretching, 2 resting, then 7 stretching. The right side begins immediately at 25 seconds; rests show a neutral pose without movement arrows. During a workout, bottom tabs are hidden; Back still offers pause and save/exit.
 
 All timings, instructions, pose sequences, and cue schedules live in `src/core/config.ts`. To add a routine, append to `ROUTINES` and supply its static pose artwork in `src/components/ExerciseArt.tsx`.
+
+Chin tucks add one randomly timed neck-length reminder and, in 30% of workouts, a shoulder-position reminder. Both finish during active holds at least 10 seconds before the exercise ends, without overlapping rest or tuck cues. Their choices stay fixed for the saved workout; pausing or muting does not queue missed tips. Tip wording and timing budgets live in `src/core/chinTips.ts`.
 
 ## Activity and milestones
 

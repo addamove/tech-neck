@@ -5,11 +5,11 @@ import { advanceSession, completionFor, createSession, cueTimeline, getFrame, ge
 import { freshData, loadData, MAX_IMPORT_BYTES, parseImport, readImport, saveData, STORAGE_KEY } from './persistence';
 import { getStats, localDateKey } from './stats';
 
-test('final routine has 385 seconds work, 140 preparation and three 65-second arm exercises', () => {
-  assert.deepEqual(DEFAULT_ROUTINE.exercises.map(item => item.durationSeconds), [60, 65, 65, 65, 30, 50, 50]);
+test('final routine has 383 seconds work, 140 preparation and three 65-second arm exercises', () => {
+  assert.deepEqual(DEFAULT_ROUTINE.exercises.map(item => item.durationSeconds), [58, 65, 65, 65, 30, 50, 50]);
   assert.deepEqual(DEFAULT_ROUTINE.exercises.map(item => item.prepSeconds), [20, 20, 20, 20, 20, 20, 20]);
   const frame = getFrame(null, DEFAULT_ROUTINE);
-  assert.equal(frame.workRemainingSeconds, 385); assert.equal(frame.totalRemainingSeconds, 525);
+  assert.equal(frame.workRemainingSeconds, 383); assert.equal(frame.totalRemainingSeconds, 523);
 });
 test('chin resting boundaries switch to initial pose with two-second rests inside total duration', () => {
   const chin = DEFAULT_ROUTINE.exercises[0];
@@ -17,7 +17,14 @@ test('chin resting boundaries switch to initial pose with two-second rests insid
   assert.equal(getPose(chin, 10).poseId, 'chin-tuck-initial');
   assert.equal(getPose(chin, 11.999).poseId, 'chin-tuck-initial');
   assert.equal(getPose(chin, 12).poseId, 'chin-tuck-active');
-  assert.deepEqual(cueTimeline(chin).filter(cue => cue.text.includes('Rest')).map(cue => cue.atSeconds), [10, 22, 34, 46, 58]);
+  assert.deepEqual(cueTimeline(chin).filter(cue => cue.text.includes('Rest')).map(cue => cue.atSeconds), [10, 22, 34, 46]);
+  assert.equal(getPose(chin, 57.999).poseId, 'chin-tuck-active');
+  const lastHold = advanceSession(createSession(DEFAULT_ROUTINE, 'chin-last-hold'), 77999, DEFAULT_ROUTINE);
+  assert.equal(lastHold.phase, 'active'); assert.equal(lastHold.phaseElapsedMs, 57999);
+  assert.equal(getFrame(lastHold, DEFAULT_ROUTINE).poseId, 'chin-tuck-active');
+  const next = advanceSession(lastHold, 1, DEFAULT_ROUTINE);
+  assert.equal(next.phase, 'prep'); assert.equal(next.exerciseIndex, 1); assert.equal(next.phaseElapsedMs, 0);
+  assert.deepEqual(next.completedExerciseIds, ['chin-tuck']);
 });
 test('arm breathing guidance occurs once after fifteen active seconds without changing visual cycles or chin reminders', () => {
   for (const [offset, exercise] of DEFAULT_ROUTINE.exercises.slice(1, 4).entries()) {
@@ -61,10 +68,10 @@ test('timer consumes overshoot across prep/work boundaries and never counts past
   const initial = createSession(DEFAULT_ROUTINE, 'session-1', new Date('2026-10-07T10:00:00.000Z'));
   const active = advanceSession(initial, 20500, DEFAULT_ROUTINE);
   assert.equal(active.phase, 'active'); assert.equal(active.phaseElapsedMs, 500);
-  const second = advanceSession(initial, 80750, DEFAULT_ROUTINE);
+  const second = advanceSession(initial, 78750, DEFAULT_ROUTINE);
   assert.equal(second.phase, 'prep'); assert.equal(second.exerciseIndex, 1); assert.equal(second.phaseElapsedMs, 750);
   const done = advanceSession(initial, 9999999, DEFAULT_ROUTINE);
-  assert.equal(done.phase, 'complete'); assert.equal(done.elapsedMs, 525000);
+  assert.equal(done.phase, 'complete'); assert.equal(done.elapsedMs, 523000);
   assert.equal(done.completedExerciseIds.length, 7);
   assert.equal(advanceSession(done, 100000, DEFAULT_ROUTINE), done);
 });

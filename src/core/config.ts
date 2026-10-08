@@ -45,7 +45,7 @@ const sideNeckCues: VoiceCue[] = sideNeckPoses.flatMap((pose, index) => {
 });
 const exercises: Exercise[] = [
   {
-    id: 'chin-tuck', title: 'Chin tuck in', durationSeconds: 60, prepSeconds: 20, prepPoseId: 'chin-tuck-initial',
+    id: 'chin-tuck', title: 'Chin tuck in', durationSeconds: 58, prepSeconds: 20, prepPoseId: 'chin-tuck-initial',
     description: 'Get into correct head posture by touching the back of your head to the wall. Make sure you are not simply moving your head backward and increasing the curve of the neck. This is also an improper posture. Focus on creating length in the back of the neck.',
     poses: [{ poseId: 'chin-tuck-active', seconds: 10, label: 'Tuck your chin in' }, { poseId: 'chin-tuck-initial', seconds: 2, label: 'Rest for two seconds', isRest: true }],
     cues: [{ atSeconds: 10, text: 'Rest for two seconds.', repeatEverySeconds: 12 }, { atSeconds: 12, text: 'Tuck your chin in.', repeatEverySeconds: 12 }],

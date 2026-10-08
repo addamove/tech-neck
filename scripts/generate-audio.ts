@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ROUTINES } from '../src/core/config';
 import { COUNTDOWN_CUES, EXERCISE_START_CUE, CUE_SLOT_SECONDS, preparationInstructionSeconds, activeVoiceTimeline } from '../src/core/voiceTiming';
+import { CHIN_FOCUS_TIP, CHIN_SHOULDERS_TIP, CHIN_TIP_TIMING } from '../src/core/chinTips';
 
 const destination = resolve('public/audio');
 const scratch = resolve('work/audio');
@@ -13,6 +14,8 @@ mkdirSync(destination, { recursive: true }); mkdirSync(scratch, { recursive: tru
 const deadlines = new Map<string, number>();
 function register(text: string, seconds: number) { deadlines.set(text, Math.min(deadlines.get(text) ?? Infinity, seconds)); }
 for (const text of [...COUNTDOWN_CUES, EXERCISE_START_CUE]) register(text, CUE_SLOT_SECONDS - 0.1);
+register(CHIN_FOCUS_TIP, CHIN_TIP_TIMING.focusSeconds);
+register(CHIN_SHOULDERS_TIP, CHIN_TIP_TIMING.shouldersSeconds);
 for (const routine of ROUTINES) for (const exercise of routine.exercises) {
   register(exercise.description, Math.max(1, preparationInstructionSeconds(exercise, 0)));
   const cues = activeVoiceTimeline(exercise);
