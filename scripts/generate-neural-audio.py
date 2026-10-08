@@ -2,6 +2,7 @@
 """Generate and validate one static English voice set without touching the other.
 
 Run: work/venv/bin/python scripts/generate-neural-audio.py --gender male
+Add countdown clips only: append --countdown-only (preserves existing audio).
 Female defaults to the existing /audio/ set; male defaults to /audio/male/.
 Dependency: edge-tts. Generation uses the network; playback is fully local.
 """
@@ -18,6 +19,7 @@ import time
 import edge_tts
 
 VOICES = {'female': 'en-US-JennyNeural', 'male': 'en-US-AndrewNeural'}
+COUNTDOWN_TEXTS = {'Three.', 'Two.', 'One.', 'Start.'}
 
 
 def execute(*arguments):
@@ -46,12 +48,18 @@ async def generate(args):
     inputs_path = work / f'neural-inputs-{args.gender}.json'
     execute('npx', 'tsx', 'scripts/generate-audio.ts', '--inputs-only', str(inputs_path))
     inputs = json.loads(inputs_path.read_text())
+    if args.countdown_only:
+        inputs = [item for item in inputs if item['text'] in COUNTDOWN_TEXTS]
+        if {item['text'] for item in inputs} != COUNTDOWN_TEXTS:
+            raise RuntimeError('Countdown input catalog is incomplete; existing audio preserved.')
     staging = work / f'neural-audio-{args.gender}-{time.time_ns()}'
     staging.mkdir()
     raw_directory = work / f'neural-raw-{args.gender}'
     raw_directory.mkdir(exist_ok=True)
     semaphore = asyncio.Semaphore(3)
-    manifest = {}
+    manifest_path = target / 'manifest.json'
+    manifest = json.loads(manifest_path.read_text()) if args.countdown_only and manifest_path.exists() else {}
+    generated = set()
     url_directory = '/' + target.relative_to(public).as_posix()
 
     async def synthesize(item):
@@ -69,22 +77,38 @@ async def generate(args):
                     if attempt == 2:
                         raise
                     await asyncio.sleep(2 ** attempt)
-            original_duration = duration(raw)
+            if text in COUNTDOWN_TEXTS:
+                # Retain a small natural margin around the word. Reverse the
+                # signal to trim only trailing silence, including quiet endings.
+                trimmed = staging / f'{name}.wav'
+                trim_filter = ('silenceremove=start_periods=1:start_duration=0.01:start_threshold=-50dB:start_silence=0.025,'
+                               'areverse,silenceremove=start_periods=1:start_duration=0.01:start_threshold=-50dB:start_silence=0.06,areverse')
+                execute('/opt/homebrew/bin/ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(raw), '-af', trim_filter, str(trimmed))
+                source = trimmed
+            else:
+                source = raw
+            original_duration = duration(source)
             acceleration = max(1.0, original_duration / max(0.5, maximum - 0.10))
+            if text in COUNTDOWN_TEXTS and acceleration > 1.5:
+                raise RuntimeError(f'Countdown would exceed natural 1.5x speed: {text!r}; current public audio preserved.')
             filters = []
             while acceleration > 2:
                 filters.append('atempo=2')
                 acceleration /= 2
             filters.append(f'atempo={acceleration:.6f}')
-            execute('/opt/homebrew/bin/ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(raw), '-af', ','.join(filters), '-codec:a', 'libmp3lame', '-q:a', '3', str(output))
+            execute('/opt/homebrew/bin/ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(source), '-af', ','.join(filters), '-codec:a', 'libmp3lame', '-q:a', '3', str(output))
+            if source != raw:
+                source.unlink()
             actual = duration(output)
-            if actual > maximum + 0.05:
+            if actual <= 0 or actual > maximum + (0 if text in COUNTDOWN_TEXTS else 0.05):
                 raise RuntimeError(f'Audio deadline failed: {text!r}, {actual:.2f}s > {maximum:.2f}s')
+            execute('/opt/homebrew/bin/ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', str(output), '-f', 'null', '-')
             manifest[text] = {'src': f'{url_directory}/{name}.mp3', 'duration': actual}
-            print(f'{name}: {actual:.2f}s / {maximum:.2f}s — {text[:55]}', flush=True)
+            generated.add(text)
+            print(f'{name}: {actual:.2f}s / {maximum:.2f}s, {max(1.0, original_duration / max(0.5, maximum - 0.10)):.3f}x — {text[:55]}', flush=True)
 
     await asyncio.gather(*(synthesize(item) for item in inputs))
-    if len(manifest) != len(inputs):
+    if len(generated) != len(inputs):
         raise RuntimeError('Missing audio entries; current public audio preserved.')
     (staging / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
     target.mkdir(parents=True, exist_ok=True)
@@ -109,7 +133,7 @@ async def generate(args):
                 destination.unlink(missing_ok=True)
         raise
     staging.rmdir()
-    print(f'Installed {len(manifest)} {voice} clips at {target}. Previous matching files: {backup}', flush=True)
+    print(f'Installed {len(generated)} {voice} clips; {len(manifest)} manifest entries at {target}. Previous matching files: {backup}', flush=True)
 
 
 if __name__ == '__main__':
@@ -118,4 +142,5 @@ if __name__ == '__main__':
     parser.add_argument('--voice', help='Override the selected gender\'s default neural voice.')
     parser.add_argument('--target', help='Output directory inside public/audio (default: female root, male subdirectory).')
     parser.add_argument('--rate', default='+5%')
+    parser.add_argument('--countdown-only', action='store_true', help='Add only Three/Two/One/Start clips; preserve other entries and recordings.')
     asyncio.run(generate(parser.parse_args()))

@@ -5,4 +5,5 @@ export * from './persistence';
 export * from './stats';
 export * from './achievements';
 export * from './activityCharts';
+export * from './voiceTiming';
 export * from './useWorkout';

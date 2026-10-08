@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { publicAssetUrl } from './assets';
 import { DEFAULT_ROUTINE } from './config';
 import { cueTimeline } from './engine';
+import { COUNTDOWN_CUES, CUE_SLOT_SECONDS, EXERCISE_START_CUE } from './voiceTiming';
 
 test('all illustration styles, badges and legacy audio resolve under both root and Pages base paths', () => {
   for (const path of ['art/chin-v2.webp', 'art/female/chin.webp', 'art/marker/sides.webp', 'badges/streak-3.webp', 'audio/male/example.mp3']) {
@@ -29,6 +30,10 @@ test('both shipped voice manifests reference existing deployable clips under the
     for (const exercise of DEFAULT_ROUTINE.exercises) {
       assert.ok(manifest[exercise.description], `Missing instruction: ${exercise.id}`);
       for (const cue of cueTimeline(exercise)) assert.ok(manifest[cue.text], `Missing cue: ${cue.text}`);
+    }
+    for (const text of [...COUNTDOWN_CUES, EXERCISE_START_CUE]) {
+      assert.ok(manifest[text], `Missing countdown clip: ${text}`);
+      assert.ok(manifest[text].duration <= CUE_SLOT_SECONDS - 0.1, `Countdown clip exceeds its slot: ${text}`);
     }
     if (!femaleKeys.length) femaleKeys = Object.keys(manifest).sort();
     else assert.deepEqual(Object.keys(manifest).sort(), femaleKeys);

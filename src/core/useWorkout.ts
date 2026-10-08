@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getRoutine } from './config';
-import { advanceSession, completionFor, createSession, cueTimeline, getFrame, recordCompletion, skipExercise, skipPreparation } from './engine';
+import { advanceSession, completionFor, createSession, getFrame, recordCompletion, skipExercise, skipPreparation } from './engine';
 import { freshData, loadData, readImport, saveData } from './persistence';
 import { getStats } from './stats';
 import { getAchievements } from './achievements';
@@ -9,6 +9,7 @@ import { WorkoutSpeaker } from './speech';
 import type { SpeechStatus } from './speech';
 import type { AppData, Session, Settings, VoiceGender } from './types';
 import { useWakeLock } from './useWakeLock';
+import { activeVoiceTimeline, dueVoiceCue, preparationInstructionSeconds, preparationVoiceTimeline } from './voiceTiming';
 
 function initialData() {
   try { return loadData(window.localStorage); }
@@ -69,7 +70,12 @@ export function useWorkout(options: { routineId?: string } = {}) {
     const nextExercise = getRoutine(nextSession.routineId).exercises[nextSession.exerciseIndex];
     speechPhase.current = `${nextSession.id}:${nextSession.exerciseIndex}:prep`;
     cueElapsed.current = -1;
-    if (settings.voiceEnabled) speakerRef.current?.speak(nextExercise.description, nextExercise.prepSeconds - nextSession.phaseElapsedMs / 1000, settings.voiceRate, settings.voiceGender, nextExercise.instructionAudio);
+    speakerRef.current?.cancel();
+    if (settings.voiceEnabled) {
+      const availableSeconds = preparationInstructionSeconds(nextExercise, nextSession.phaseElapsedMs / 1000);
+      if (availableSeconds >= 0.5) speakerRef.current?.speak(nextExercise.description, availableSeconds, settings.voiceRate, settings.voiceGender, nextExercise.instructionAudio);
+      else speakerRef.current?.unlock(); // Resume within the countdown, not the full description.
+    }
   }, []);
   useEffect(() => {
     if (previewPlaying.current) return;
@@ -79,16 +85,13 @@ export function useWorkout(options: { routineId?: string } = {}) {
       speakerRef.current?.cancel(); speechPhase.current = phaseKey; cueElapsed.current = -1;
       if (session.phase === 'prep') speakPreparation(session, data.settings);
     }
-    if (session.phase !== 'active') return;
+    if (session.phase !== 'prep' && session.phase !== 'active') return;
     const elapsed = session.phaseElapsedMs / 1000;
-    const timeline = cueTimeline(exercise);
-    const due = timeline.filter(cue => cue.atSeconds > cueElapsed.current && cue.atSeconds <= elapsed);
+    const timeline = session.phase === 'prep' ? preparationVoiceTimeline(exercise) : activeVoiceTimeline(exercise);
+    const duration = session.phase === 'prep' ? exercise.prepSeconds : exercise.durationSeconds;
+    const cue = dueVoiceCue(timeline, cueElapsed.current, elapsed, duration);
     cueElapsed.current = elapsed;
-    const cue = due.at(-1);
-    if (!cue || elapsed - cue.atSeconds > 2) return;
-    const following = timeline.find(item => item.atSeconds > cue.atSeconds);
-    const deadline = Math.min(exercise.durationSeconds, following?.atSeconds ?? exercise.durationSeconds);
-    speakerRef.current?.speak(cue.text, deadline - elapsed, data.settings.voiceRate, data.settings.voiceGender);
+    if (cue) speakerRef.current?.speak(cue.text, cue.availableSeconds, data.settings.voiceRate, data.settings.voiceGender);
   }, [session, exercise, running, data.settings.voiceEnabled, data.settings.voiceRate, data.settings.voiceGender, speakPreparation]);
 
   const lastSaved = useRef({ data, at: 0, trusted: !initial.error });
@@ -128,7 +131,12 @@ export function useWorkout(options: { routineId?: string } = {}) {
     if (!current.session || current.session.phase === 'complete' || document.visibilityState !== 'visible') return;
     timerMark.current = performance.now();
     if (current.session.phase === 'prep') speakPreparation(current.session, current.settings);
-    else if (current.settings.voiceEnabled) speakerRef.current?.unlock();
+    else {
+      // Resuming an active exercise must not replay Start or missed cues.
+      speechPhase.current = `${current.session.id}:${current.session.exerciseIndex}:active`;
+      cueElapsed.current = current.session.phaseElapsedMs / 1000;
+      if (current.settings.voiceEnabled) speakerRef.current?.unlock();
+    }
     setData(previous => previous.session ? { ...previous, session: { ...previous.session, paused: false } } : previous);
   }, [speakPreparation]);
   const next = useCallback(() => {
@@ -147,7 +155,14 @@ export function useWorkout(options: { routineId?: string } = {}) {
     const changesGender = settings.voiceGender !== undefined && settings.voiceGender !== dataRef.current.settings.voiceGender;
     if (settings.voiceGender !== undefined) preferredGender.current = settings.voiceGender;
     if (changesGender) speakerRef.current?.cancel();
-    if (settings.voiceEnabled === true || changesGender) { speakerRef.current?.unlock(); speechPhase.current = ''; }
+    if (settings.voiceEnabled === true || changesGender) {
+      speakerRef.current?.unlock();
+      const session = dataRef.current.session;
+      if (session?.phase === 'active') {
+        speechPhase.current = `${session.id}:${session.exerciseIndex}:active`;
+        cueElapsed.current = session.phaseElapsedMs / 1000;
+      } else speechPhase.current = '';
+    }
     setData(previous => ({ ...previous, settings: { ...previous.settings, ...settings, voiceRate: Math.max(0.5, Math.min(2, settings.voiceRate !== undefined && Number.isFinite(settings.voiceRate) ? settings.voiceRate : previous.settings.voiceRate)), selectedRoutineId: getRoutine(settings.selectedRoutineId ?? previous.settings.selectedRoutineId).id } }));
   }, []);
   const previewVoice = useCallback((gender?: VoiceGender) => {

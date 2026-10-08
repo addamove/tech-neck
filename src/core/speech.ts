@@ -1,5 +1,6 @@
 import type { VoiceGender } from './types';
 import { publicAssetUrl } from './assets';
+import { COUNTDOWN_CUES, EXERCISE_START_CUE } from './voiceTiming';
 export type SpeechStatus = 'ready' | 'speaking' | 'unavailable';
 interface AudioEntry { src: string; duration: number }
 type AudioManifest = Record<string, AudioEntry>;
@@ -55,7 +56,11 @@ export class WorkoutSpeaker {
   dispose() { this.cancel(); this.disposed = true; }
   speak(text: string, availableSeconds: number, preferredRate: number, gender: VoiceGender = 'female', customAudio?: string) {
     this.cancel();
-    if (availableSeconds < 0.5 || this.disposed) return;
+    // Short recorded numbers can still fit after resuming midway through a
+    // countdown beat; long instructions retain the normal minimum budget.
+    const isCountdown = text === EXERCISE_START_CUE || COUNTDOWN_CUES.some(cue => cue === text);
+    const minimumSeconds = isCountdown ? 0.15 : 0.5;
+    if (availableSeconds < minimumSeconds || this.disposed) return;
     const generation = this.generation;
     const startedAt = performance.now();
     const current = () => generation === this.generation && !this.disposed;
@@ -64,7 +69,7 @@ export class WorkoutSpeaker {
     const fallback = () => {
       if (!current() || fallbackStarted) return;
       fallbackStarted = true;
-      if (remaining() < 0.5) { this.onStatus('ready'); return; }
+      if (remaining() < minimumSeconds) { this.onStatus('ready'); return; }
       if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) { this.onStatus('unavailable'); return; }
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
@@ -82,7 +87,7 @@ export class WorkoutSpeaker {
     };
     const play = (entry: AudioEntry | undefined) => {
       if (!current()) return;
-      if (remaining() < 0.5) { this.onStatus('ready'); return; }
+      if (remaining() < minimumSeconds) { this.onStatus('ready'); return; }
       if (!entry || typeof entry.src !== 'string' || !Number.isFinite(entry.duration) || entry.duration <= 0) { fallback(); return; }
       this.audio ??= new Audio();
       const audio = this.audio;

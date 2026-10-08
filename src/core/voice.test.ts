@@ -177,6 +177,27 @@ test('Web Speech fitting and preferred settings never exceed 1.5x', async () => 
     assert.equal(browser.utterances.length, 4);
   } finally { speaker.dispose(); browser.restore(); }
 });
+test('single-word countdown recordings can play after a mid-beat resume without lifting the rate ceiling', async () => {
+  const clip: Manifest = { 'Three.': { src: '/audio/three.mp3', duration: 0.4 } };
+  const browser = mockBrowser(async () => response(clip));
+  const speaker = new WorkoutSpeaker(() => {}, '/');
+  try {
+    await flush();
+    speaker.speak('Three.', 0.35, 2);
+    assert.equal(browser.audios[0].src, '/audio/three.mp3');
+    assert.equal(browser.audios[0].paused, false);
+    assert.equal(browser.audios[0].playbackRate, 1.5);
+    assert.equal(browser.utterances.length, 0);
+    const playCount = browser.plays.length;
+    speaker.speak('Three.', 0.1, 1);
+    assert.equal(browser.plays.length, playCount);
+    assert.equal(browser.audios[0].paused, true);
+    speaker.speak(phrase, 0.35, 1);
+    assert.equal(browser.utterances.length, 0); // Long guidance does not start in a stale short slot.
+    speaker.speak('Instruction.', 0.35, 1);
+    assert.equal(browser.utterances.length, 0); // The reduced budget applies only to the four countdown texts.
+  } finally { speaker.dispose(); browser.restore(); }
+});
 test('a stalled manifest falls back promptly and late resolution cannot start overlapping MP3 speech', async () => {
   const loading = deferred<Response>();
   const browser = mockBrowser(async () => loading.promise);

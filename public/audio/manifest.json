@@ -70,5 +70,21 @@
   "Inhale while lifting up. Exhale while moving down.": {
     "src": "/audio/1aaf0e150831580c.mp3",
     "duration": 4.445333
+  },
+  "Three.": {
+    "src": "/audio/7a591602a526afab.mp3",
+    "duration": 0.385958
+  },
+  "Two.": {
+    "src": "/audio/12273b9ab421f56f.mp3",
+    "duration": 0.402875
+  },
+  "One.": {
+    "src": "/audio/7febc01eaa65388e.mp3",
+    "duration": 0.399167
+  },
+  "Start.": {
+    "src": "/audio/47cc2bcc1f55b0e0.mp3",
+    "duration": 0.558167
   }
 }
