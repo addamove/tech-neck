@@ -4,6 +4,7 @@
 Run: work/venv/bin/python scripts/generate-neural-audio.py --gender male
 Add countdown clips only: append --countdown-only (preserves existing audio).
 Add chin tips only: append --chin-tips-only (also preserves existing audio).
+Add hands guidance only: append --hands-only (preserves all existing audio).
 Female defaults to the existing /audio/ set; male defaults to /audio/male/.
 Dependency: edge-tts. Generation uses the network; playback is fully local.
 """
@@ -54,7 +55,10 @@ async def generate(args):
     inputs_path = work / f'neural-inputs-{args.gender}.json'
     execute('npx', 'tsx', 'scripts/generate-audio.ts', '--inputs-only', str(inputs_path))
     inputs = json.loads(inputs_path.read_text())
-    selected_texts = COUNTDOWN_TEXTS if args.countdown_only else CHIN_TIP_TEXTS if args.chin_tips_only else None
+    hands_texts = {item['text'] for item in inputs if 'hands-level-1' in item.get('routineIds', []) and item['text'] not in COUNTDOWN_TEXTS}
+    selected_texts = COUNTDOWN_TEXTS if args.countdown_only else CHIN_TIP_TEXTS if args.chin_tips_only else hands_texts if args.hands_only else None
+    if args.hands_only and not hands_texts:
+        raise RuntimeError('Hands input catalog is missing; existing audio preserved.')
     if selected_texts:
         inputs = [item for item in inputs if item['text'] in selected_texts]
         if {item['text'] for item in inputs} != selected_texts:
@@ -85,7 +89,7 @@ async def generate(args):
                         if attempt == 2:
                             raise
                         await asyncio.sleep(2 ** attempt)
-            if text in TRIMMED_TEXTS:
+            if text in TRIMMED_TEXTS or text in hands_texts:
                 # Retain a small natural margin around the word. Reverse the
                 # signal to trim only trailing silence, including quiet endings.
                 trimmed = staging / f'{name}.wav'
@@ -97,7 +101,7 @@ async def generate(args):
                 source = raw
             original_duration = duration(source)
             acceleration = max(1.0, original_duration / max(0.5, maximum - 0.10))
-            if text in TRIMMED_TEXTS and acceleration > 1.5:
+            if (text in TRIMMED_TEXTS or text in hands_texts) and acceleration > 1.5:
                 raise RuntimeError(f'Audio would exceed natural 1.5x speed: {text!r}; current public audio preserved.')
             filters = []
             while acceleration > 2:
@@ -153,5 +157,6 @@ if __name__ == '__main__':
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--countdown-only', action='store_true', help='Add only Three/Two/One/Start clips; preserve other entries and recordings.')
     selection.add_argument('--chin-tips-only', action='store_true', help='Add only the two chin coaching tips; preserve other entries and recordings.')
+    selection.add_argument('--hands-only', action='store_true', help='Add only hands guidance; preserve existing instructions, cues and recordings.')
     parser.add_argument('--reuse-raw', action='store_true', help='Reuse matching voice/rate/text recordings in ignored work instead of synthesizing them again.')
     asyncio.run(generate(parser.parse_args()))

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { publicAssetUrl } from './assets';
-import { DEFAULT_ROUTINE } from './config';
+import { ROUTINES } from './config';
 import { cueTimeline } from './engine';
 import { COUNTDOWN_CUES, CUE_SLOT_SECONDS, EXERCISE_START_CUE } from './voiceTiming';
 import { CHIN_FOCUS_TIP, CHIN_SHOULDERS_TIP, CHIN_TIP_TIMING } from './chinTips';
@@ -28,7 +28,7 @@ test('both shipped voice manifests reference existing deployable clips under the
   for (const manifestPath of ['audio/manifest.json', 'audio/male/manifest.json']) {
     const source = readFileSync(join('public', manifestPath), 'utf8');
     const manifest = JSON.parse(source) as Record<string, { src: string; duration: number }>;
-    for (const exercise of DEFAULT_ROUTINE.exercises) {
+    for (const routine of ROUTINES) for (const exercise of routine.exercises) {
       assert.ok(manifest[exercise.description], `Missing instruction: ${exercise.id}`);
       for (const cue of cueTimeline(exercise)) assert.ok(manifest[cue.text], `Missing cue: ${cue.text}`);
     }

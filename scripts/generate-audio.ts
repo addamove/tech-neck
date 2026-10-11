@@ -12,21 +12,25 @@ const destination = resolve('public/audio');
 const scratch = resolve('work/audio');
 mkdirSync(destination, { recursive: true }); mkdirSync(scratch, { recursive: true });
 const deadlines = new Map<string, number>();
-function register(text: string, seconds: number) { deadlines.set(text, Math.min(deadlines.get(text) ?? Infinity, seconds)); }
+const routineIds = new Map<string, Set<string>>();
+function register(text: string, seconds: number, routineId?: string) {
+  deadlines.set(text, Math.min(deadlines.get(text) ?? Infinity, seconds));
+  if (routineId) { const ids = routineIds.get(text) ?? new Set<string>(); ids.add(routineId); routineIds.set(text, ids); }
+}
 for (const text of [...COUNTDOWN_CUES, EXERCISE_START_CUE]) register(text, CUE_SLOT_SECONDS - 0.1);
 register(CHIN_FOCUS_TIP, CHIN_TIP_TIMING.focusSeconds);
 register(CHIN_SHOULDERS_TIP, CHIN_TIP_TIMING.shouldersSeconds);
 for (const routine of ROUTINES) for (const exercise of routine.exercises) {
-  register(exercise.description, Math.max(1, preparationInstructionSeconds(exercise, 0)));
+  register(exercise.description, Math.max(1, preparationInstructionSeconds(exercise, 0)), routine.id);
   const cues = activeVoiceTimeline(exercise);
   cues.forEach((cue, index) => {
     const deadline = Math.min(exercise.durationSeconds, cue.deadlineSeconds ?? Infinity, cues[index + 1]?.atSeconds ?? Infinity);
-    register(cue.text, Math.max(0.8, Math.min(cue.text.includes('Rest for two') ? 1.8 : 8, deadline - cue.atSeconds - 0.15)));
+    register(cue.text, Math.max(0.8, Math.min(cue.text.includes('Rest for two') ? 1.8 : 8, deadline - cue.atSeconds - 0.15)), routine.id);
   });
 }
 if (process.argv.includes('--inputs-only')) {
   const argument = process.argv[process.argv.indexOf('--inputs-only') + 1] ?? 'work/audio-inputs.json';
-  writeFileSync(resolve(argument), JSON.stringify([...deadlines].map(([text, maxSeconds]) => ({ text, maxSeconds })), null, 2));
+  writeFileSync(resolve(argument), JSON.stringify([...deadlines].map(([text, maxSeconds]) => ({ text, maxSeconds, routineIds: [...(routineIds.get(text) ?? [])] })), null, 2));
   process.exit(0);
 }
 const manifest: Record<string, { src: string; duration: number }> = {};

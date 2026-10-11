@@ -31,6 +31,7 @@ export interface WorkoutStats {
 export type AchievementMetric = 'sessions' | 'bestStreak' | 'activeDays';
 export interface AchievementDefinition {
   id: string; title: string; description: string; criterion: string; metric: AchievementMetric; target: number;
+  routineId?: string;
 }
 export interface Achievement extends AchievementDefinition {
   progress: number; progressPercent: number; unlocked: boolean; unlockedAt: string | null;

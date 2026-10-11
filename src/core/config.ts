@@ -1,4 +1,6 @@
 import type { AppData, Exercise, PoseStep, Routine, VoiceCue } from './types';
+import { HANDS_ROUTINE } from './handsRoutine';
+export { HANDS_ROUTINE, HANDS_TIMING } from './handsRoutine';
 
 export const PREPARATION_DEMO_STEP_MS = 3000;
 
@@ -84,7 +86,7 @@ const exercises: Exercise[] = [
     cues: [{ atSeconds: 0, text: 'Start on your left side.' }, { atSeconds: 25, text: 'Switch to your right side.' }],
   },
 ];
-export const ROUTINES: Routine[] = [{ id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }];
+export const ROUTINES: Routine[] = [{ id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }, HANDS_ROUTINE];
 export const DEFAULT_ROUTINE = ROUTINES[0];
 export const DEFAULT_DATA: AppData = {
   format: 'tech-neck', version: 1,

@@ -31,12 +31,13 @@ import { completedHistory } from "./core/history";
 import { getStats } from "./core/stats";
 import { getActivityCharts } from "./core/activityCharts";
 import { getPose } from "./core/engine";
-import { PREPARATION_DEMO_STEP_MS } from "./core/config";
+import { PREPARATION_DEMO_STEP_MS, ROUTINES, getRoutine } from "./core/config";
 import { publicAssetUrl } from "./core/assets";
 import type { AppData } from "./core/types";
 import ExerciseArt from "./components/ExerciseArt";
 import AboutPage from "./components/AboutPage";
 import ActivityCharts from "./components/ActivityCharts";
+import RoutinePicker from "./components/RoutinePicker";
 import AchievementConfetti from "./components/AchievementConfetti";
 import { achievementSnapshot, newlyEarnedAchievements, type AchievementSnapshot } from "./components/achievementCelebration";
 
@@ -124,6 +125,7 @@ export default function App() {
     data,
     session,
     routine,
+    selectedRoutine,
     exercise,
     frame,
     settings,
@@ -142,6 +144,7 @@ export default function App() {
   const [dialog, setDialog] = useState<
     "exit" | "reset" | "import" | "export" | "achievement" | null
   >(null);
+  const [pendingStartRoutineId, setPendingStartRoutineId] = useState<string | null>(null);
   const [selectedAchievementId, setSelectedAchievementId] = useState<
     string | null
   >(null);
@@ -202,8 +205,12 @@ export default function App() {
   useEffect(() => {
     if (!showWorkout) homeLaunchGuard.current = false;
   }, [showWorkout]);
-  const totalSeconds = routine.exercises.reduce(
+  const totalSeconds = selectedRoutine.exercises.reduce(
     (sum, item) => sum + item.durationSeconds + item.prepSeconds,
+    0,
+  );
+  const movementSeconds = selectedRoutine.exercises.reduce(
+    (sum, item) => sum + item.durationSeconds,
     0,
   );
   const activeScreen =
@@ -246,17 +253,29 @@ export default function App() {
       exercise.id !== "chin-tuck" ||
       session.phaseElapsedMs >= PREPARATION_DEMO_STEP_MS),
   );
-  const start = () => {
-    workout.start();
+  const savedWorkout = session && session.phase !== "complete" ? session : null;
+  const savedRoutine = savedWorkout ? getRoutine(savedWorkout.routineId) : null;
+  const selectedIsSaved = savedWorkout?.routineId === selectedRoutine.id;
+  const isHandsRoutine = routine.id === "hands-level-1";
+  const resumeExistingWorkout = () => {
+    if (homeLaunchGuard.current) return;
+    homeLaunchGuard.current = true;
+    workout.resume();
+    setShowWorkout(true);
+  };
+  const start = (routineId = selectedRoutine.id) => {
+    if (homeLaunchGuard.current) return;
+    homeLaunchGuard.current = true;
+    workout.start(routineId);
     setShowWorkout(true);
   };
   const launchHomeWorkout = () => {
     if (homeLaunchGuard.current) return;
-    homeLaunchGuard.current = true;
     // Keep audio unlocking and narration inside the original click gesture.
-    if (session && session.phase !== "complete") {
-      workout.resume();
-      setShowWorkout(true);
+    if (savedWorkout && selectedIsSaved) resumeExistingWorkout();
+    else if (savedWorkout) {
+      setPendingStartRoutineId(selectedRoutine.id);
+      setDialog("reset");
     } else start();
   };
   const leave = () => {
@@ -486,7 +505,7 @@ export default function App() {
               <ArrowLeft size={17} />
               Back
             </button>
-            <span className="header-label">LEVEL 1</span>
+            <span className="header-label">{isHandsRoutine ? "HANDS · LEVEL 1" : "LEVEL 1"}</span>
             <button
               className="top-icon"
               aria-label={
@@ -544,13 +563,13 @@ export default function App() {
             </div>
             <span className="eyebrow">DAILY RESET COMPLETE</span>
             <h1>
-              A little taller.
-              <br />A little lighter.
+              {isHandsRoutine ? "Small movements." : "A little taller."}
+              <br />{isHandsRoutine ? "Time for yourself." : "A little lighter."}
             </h1>
             <p>
               You made time for yourself.
               <br />
-              Keep that good posture with you.
+              {isHandsRoutine ? "Keep your hands relaxed and comfortable." : "Keep that good posture with you."}
             </p>
             <div className="earned-xp">
               <Sparkles size={19} /> +{routine.xp} XP
@@ -630,6 +649,7 @@ export default function App() {
             )}
             <h1 className="exercise-title">{exercise.title}</h1>
             <p className="exercise-description">{exercise.description}</p>
+            {isHandsRoutine && <p className="movement-comfort">Move within a comfortable range. Stop if pain, tingling or numbness increases.</p>}
             {frame.phase === "prep" ? (
               <div className="prep-actions">
                 <span className="next-label">
@@ -736,7 +756,7 @@ export default function App() {
               <span>feel better.</span>
             </h1>
             <p>
-              A few minutes for your neck.
+              A few minutes for your {selectedRoutine.id === "hands-level-1" ? "hands and wrists" : "neck"}.
               <br />A fresh start for the rest of your day.
             </p>
           </div>
@@ -759,26 +779,32 @@ export default function App() {
             </button>
           </div>
           <div className="start-area">
-            {(!session || session.phase === "complete") && (
+            {!selectedIsSaved && (
               <span className="start-label">START TRAINING</span>
             )}
+            <RoutinePicker routines={ROUTINES} selectedId={selectedRoutine.id} onChange={(id) => workout.updateSettings({ selectedRoutineId: id })}>
             <button
               className="start-play"
               aria-label={
-                session && session.phase !== "complete"
+                selectedIsSaved
                   ? "Resume saved workout"
-                  : "Start training"
+                  : `Start ${selectedRoutine.title}`
               }
               onClick={launchHomeWorkout}
             >
               <span className="start-play-surface" aria-hidden="true" />
               <Play size={43} fill="currentColor" strokeWidth={1.3} />
             </button>
-            <strong>Tech Neck · Level 1</strong>
+            </RoutinePicker>
             <span className="routine-meta">
-              {routine.exercises.length} exercises <span>·</span>{" "}
-              {formatTime(totalSeconds)} min <span>·</span> +{routine.xp} XP
+              {selectedRoutine.exercises.length} exercises <span>·</span>{" "}
+              {selectedRoutine.id === "hands-level-1" ? (
+                <>{movementSeconds / 60} min movement<br />{formatTime(totalSeconds).replace(/^0/, "")} total</>
+              ) : `${formatTime(totalSeconds)} min`} <span>·</span> +{selectedRoutine.xp} XP
             </span>
+            {savedRoutine && !selectedIsSaved && (
+              <button className="resume-other-routine" onClick={resumeExistingWorkout}><RotateCcw size={13} />Resume {savedRoutine.title}</button>
+            )}
           </div>
           <Waves />
         </main>
@@ -882,7 +908,7 @@ export default function App() {
                     <Check size={18} />
                   </span>
                   <span>
-                    <strong>Level 1 completed</strong>
+                    <strong>{getRoutine(record.routineId).title} completed</strong>
                     <small>
                       {new Date(record.completedAt).toLocaleDateString(
                         "en-US",
@@ -957,8 +983,7 @@ export default function App() {
               ))}
             </div>
             <small className="achievement-note">
-              Milestones celebrate your progress. Every completed reset earns 10
-              XP.
+              Milestones celebrate your progress. Tech Neck earns 10 XP; Hands earns 5 XP.
             </small>
           </section>
         </main>
@@ -1298,19 +1323,19 @@ export default function App() {
         </Modal>
       )}
       {dialog === "reset" && (
-        <Modal title="Start fresh?" onClose={() => setDialog(null)}>
+        <Modal title="Replace your saved workout?" onClose={() => setDialog(null)}>
           <p>
-            This will replace your saved workout. Your completed activity and XP
-            stay safe.
+            Starting {getRoutine(pendingStartRoutineId ?? selectedRoutine.id).title} will replace your unfinished {savedRoutine?.title ?? "workout"}. Your completed activity and XP stay safe.
           </p>
           <button
             className="primary-button"
             onClick={() => {
-              start();
+              start(pendingStartRoutineId ?? selectedRoutine.id);
+              setPendingStartRoutineId(null);
               setDialog(null);
             }}
           >
-            Start new workout
+            Replace & start
             <RotateCcw size={17} />
           </button>
           <button className="text-button" onClick={() => setDialog(null)}>

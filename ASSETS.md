@@ -1,5 +1,7 @@
 # Generated artwork
 
+The Hands routine has a separate [artwork and processing record](docs/hands-assets.md), covering its three atlases and four achievement medals.
+
 The exercise artwork was generated with the built-in image generation tool. No screenshot crops are shipped as app artwork. The supplied screenshots were used as exercise and layout references.
 
 Shipped files are WebP images in `public/art/`. The PNG filenames in the generation notes below identify the original outputs, now preserved privately in ignored `work/image-originals/`. The app uses the first side-neck pose with a horizontal reflection for the opposite direction because the generated sheet duplicated the same direction. `back-v3.png` is the corrected single portrait used for the back-of-neck stretch. Rejected `back.png` and `back-v2.png` are preserved in `work/rejected-art/` and are excluded from the offline app cache.

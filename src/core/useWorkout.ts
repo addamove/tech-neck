@@ -29,7 +29,8 @@ export function useWorkout(options: { routineId?: string } = {}) {
   const speechPhase = useRef('');
   const cueElapsed = useRef(-1);
   const timerMark = useRef(0);
-  const routine = getRoutine(data.session?.routineId ?? options.routineId ?? data.settings.selectedRoutineId);
+  const selectedRoutine = getRoutine(options.routineId ?? data.settings.selectedRoutineId);
+  const routine = data.session ? getRoutine(data.session.routineId) : selectedRoutine;
   const session = data.session;
   const exercise = routine.exercises[session?.exerciseIndex ?? 0];
   const running = Boolean(session && !session.paused && session.phase !== 'complete');
@@ -185,5 +186,5 @@ export function useWorkout(options: { routineId?: string } = {}) {
   const frame = useMemo(() => getFrame(session, routine), [session, routine]);
   const stats = useMemo(() => getStats(data.completions), [data.completions, calendarClock]);
   const achievements = useMemo(() => getAchievements(data.completions), [data.completions, calendarClock]);
-  return { data, session, routine, exercise, frame, settings: data.settings, stats, achievements, storageError, speechStatus, wakeLockStatus, start, pause, resume, next, skipPreparation: skipPrep, stop, updateSettings, previewVoice, exportData, importData, resetStats };
+  return { data, session, routine, selectedRoutine, exercise, frame, settings: data.settings, stats, achievements, storageError, speechStatus, wakeLockStatus, start, pause, resume, next, skipPreparation: skipPrep, stop, updateSettings, previewVoice, exportData, importData, resetStats };
 }

@@ -63,11 +63,17 @@ All timings, instructions, pose sequences, and cue schedules live in `src/core/c
 
 Chin tucks add one randomly timed neck-length reminder and, in 30% of workouts, a shoulder-position reminder. Both finish during active holds at least 10 seconds before the exercise ends, without overlapping rest or tuck cues. Their choices stay fixed for the saved workout; pausing or muting does not queue missed tips. Tip wording and timing budgets live in `src/core/chinTips.ts`.
 
+**Hands · Level 1** adds finger spread, finger bends, supported wrist bends, palm turns, and wrist side-to-side movements. Each exercise alternates two 3-second movements for six cycles, with no holds: 36 seconds of movement and 15 seconds of preparation. The routine totals **3 minutes of movement**, or **4 minutes 15 seconds including preparation**, and earns **5 XP**. Keep movements comfortable; stop if they cause pain or worsen symptoms. This is gentle mobility, not a treatment claim for carpal tunnel syndrome. Swipe beside Play or use the workout selector; changing the selection preserves any saved workout.
+
 ## Activity and milestones
 
 Activity shows total XP, completed workouts, the current week, the selected calendar month, the current day streak, and recent workouts. Calendar dates use the device's local timezone; weeks start on Monday. Multiple resets on one day count as separate workouts and one active day.
 
 Six achievement medals mark your first reset, 3- and 7-day streaks, 10 and 25 completed workouts, and 30 active days. Tap a medal to see its goal, progress, and first earned date. Achievements are calculated from completed workout history, so importing a backup restores the same milestones. They add no extra XP.
+
+Four additional hands milestones count only hands workouts: first completion, 5 completions, 10 completions, and 7 distinct active days. Existing milestones, calendar, streaks, and charts combine both routines. XP sums each completion's recorded award: 10 for neck and 5 for hands. Earlier neck history and version1 backups keep their original XP.
+
+Add the ten hands instructions and reminders to each voice set with `work/venv/bin/python scripts/generate-neural-audio.py --gender female --hands-only` and the same command with `--gender male`. This additive mode preserves existing recordings and manifest entries and limits fitting to 1.5x.
 
 New medals earned by completing a workout automatically open that same detail window with a brief confetti celebration; multiple medals appear one at a time. Loading a page or importing a backup does not replay celebrations. Reduced-motion preferences suppress confetti.
 
@@ -100,6 +106,8 @@ npm run optimize:images -- --apply
 ```
 
 The installed Sharp dependency is used only by this development utility. Compression settings follow the [official Sharp WebP documentation](https://sharp.pixelplumbing.com/api-output/#webp).
+
+Hands atlases have a separate additive utility: `node scripts/prepare-hands-art.mjs --male INPUT.png --female INPUT.png --marker INPUT.png --badges BADGES.png`. It preserves source files in ignored `work/hands-art-originals/`, records row bounds and wrist offsets, installs three same-size WebP atlases and splits the four-medal atlas. Optional `--male-row5`, `--female-row5`, and `--marker-row5` inputs replace only the corrected final row. Marker output is verified pixel-identical after decoding; photo artwork and medals use quality85. Existing neck artwork is untouched. See [Hands assets](docs/hands-assets.md).
 
 ## Check
 

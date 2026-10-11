@@ -1,5 +1,6 @@
 import type { IllustrationStyle } from "../core/types";
 import { publicAssetUrl } from "../core/assets";
+import HandsArt from './HandsArt';
 
 interface PoseArt {
   sheet: string;
@@ -257,6 +258,9 @@ export default function ExerciseArt({
   isRest?: boolean;
   illustrationStyle?: IllustrationStyle;
 }) {
+  if (poseId.startsWith('hands-')) {
+    return <HandsArt poseId={poseId} title={title} isRest={isRest} illustrationStyle={illustrationStyle} />;
+  }
   const neutralSideRest =
     isRest && (poseId === "side-neck-left" || poseId === "side-neck-right");
   const art =
