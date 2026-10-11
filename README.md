@@ -107,7 +107,7 @@ npm run optimize:images -- --apply
 
 The installed Sharp dependency is used only by this development utility. Compression settings follow the [official Sharp WebP documentation](https://sharp.pixelplumbing.com/api-output/#webp).
 
-Hands atlases have a separate additive utility: `node scripts/prepare-hands-art.mjs --male INPUT.png --female INPUT.png --marker INPUT.png --badges BADGES.png`. It preserves source files in ignored `work/hands-art-originals/`, records row bounds and wrist offsets, installs three same-size WebP atlases and splits the four-medal atlas. Optional `--male-row5`, `--female-row5`, and `--marker-row5` inputs replace only the corrected final row. Marker output is verified pixel-identical after decoding; photo artwork and medals use quality85. Existing neck artwork is untouched. See [Hands assets](docs/hands-assets.md).
+Hands atlases have a separate additive utility: `node scripts/prepare-hands-art.mjs --male INPUT.png --female INPUT.png --marker INPUT.png --badges BADGES.png`. It preserves source files in ignored `work/hands-art-originals/`, records row bounds and wrist offsets, installs three same-size WebP atlases and splits the four-medal atlas. Optional `--male-row5`, `--female-row5`, and `--marker-row5` inputs replace only the corrected final row. `--male-cell1`, `--female-cell1`, and `--marker-cell1` replace only the top-left cell of the accepted assembled master, verifying every other master pixel stays unchanged. Marker output is verified pixel-identical after decoding; photo artwork and medals use quality85. Existing neck artwork is untouched. See [Hands assets](docs/hands-assets.md).
 
 ## Check
 
