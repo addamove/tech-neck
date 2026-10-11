@@ -751,14 +751,6 @@ export default function App() {
             </button>
             <button
               className="outline-button"
-              onClick={() => setTab("activity")}
-            >
-              <CalendarDays size={18} />
-              <span>My activity</span>
-              <ChevronRight size={18} />
-            </button>
-            <button
-              className="outline-button"
               onClick={() => setTab("settings")}
             >
               <Settings2 size={18} />
