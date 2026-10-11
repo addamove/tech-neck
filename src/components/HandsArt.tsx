@@ -14,12 +14,12 @@ const columns: Record<string, [number, number]> = {
 };
 const arrows: Record<string, Arrow[]> = {
   'hands-spread-a': [
-    { path: 'M95 70H130', head: 'M146 70L130 61V79Z' },
-    { path: 'M417 70H382', head: 'M366 70L382 61V79Z' },
-  ],
-  'hands-spread-b': [
     { path: 'M145 70H110', head: 'M94 70L110 61V79Z' },
     { path: 'M367 70H402', head: 'M418 70L402 61V79Z' },
+  ],
+  'hands-spread-b': [
+    { path: 'M95 70H130', head: 'M146 70L130 61V79Z' },
+    { path: 'M417 70H382', head: 'M366 70L382 61V79Z' },
   ],
   'hands-wrist-bends-a': [{ path: 'M478 245V112', head: 'M478 95L468 112H488Z' }],
   'hands-wrist-bends-b': [{ path: 'M478 85V218', head: 'M478 235L468 218H488Z' }],

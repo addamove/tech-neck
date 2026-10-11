@@ -17,6 +17,7 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [settling, setSettling] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
   const gesture = useRef<Gesture | null>(null);
   const suppressClick = useRef(false);
@@ -34,6 +35,7 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
     setOffset(0);
     setDragging(false);
     setSettling(false);
+    setPressed(false);
   };
   useEffect(() => {
     cancelMotion();
@@ -88,15 +90,26 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
     if (viewport.current?.hasPointerCapture(id)) viewport.current.releasePointerCapture(id);
   };
   const panelIds = [adjacentRoutineId(ids, displayedId, -1), displayedId, adjacentRoutineId(ids, displayedId, 1)];
+  const progress = offset / (viewport.current?.getBoundingClientRect().width || 1);
+  const glowVisibility = [Math.max(0, progress), 1 - Math.abs(progress), Math.max(0, -progress)];
+  const trackTransform = `translate3d(calc(-100% + ${offset}px), 0, 0)`;
   return (
     <div className="routine-choice">
       <div className="routine-carousel">
+        <div className={`routine-backlights${settling ? ' settling' : ''}${pressed ? ' pressed' : ''}`} style={{ transform: trackTransform }} aria-hidden="true">
+          {panelIds.map((id, index) => (
+            <div className="routine-backlight-card" data-routine={id} key={index} style={{ opacity: glowVisibility[index] }}>
+              <span className="play-backlight" />
+            </div>
+          ))}
+        </div>
         <div
           ref={viewport}
           className="routine-viewport"
           onPointerDown={(event) => {
             suppressClick.current = false;
             if (animation.current || !event.isPrimary || event.button !== 0 || (event.target as Element).closest('select')) return;
+            setPressed(Boolean((event.target as Element).closest('.start-play')));
             gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY, startedAt: performance.now(), width: event.currentTarget.getBoundingClientRect().width, axis: null };
           }}
           onPointerMove={(event) => {
@@ -106,15 +119,17 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
             const dy = event.clientY - start.y;
             if (!start.axis) {
               if (Math.max(Math.abs(dx), Math.abs(dy)) < 10) return;
-              if (Math.abs(dx) < Math.abs(dy) * 1.4) { start.axis = 'vertical'; return; }
+              if (Math.abs(dx) < Math.abs(dy) * 1.4) { start.axis = 'vertical'; setPressed(false); return; }
               start.axis = 'horizontal';
               suppressClick.current = true;
               event.currentTarget.setPointerCapture(event.pointerId);
               setDragging(true);
+              setPressed(false);
             }
             setOffset(carouselDragOffset(dx, start.width));
           }}
           onPointerUp={(event) => {
+            setPressed(false);
             const start = gesture.current;
             gesture.current = null;
             if (!start || start.id !== event.pointerId || start.axis !== 'horizontal') return;
@@ -123,17 +138,25 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
             slide(routineCarouselDirection(start, { x: event.clientX, y: event.clientY }, start.width, performance.now() - start.startedAt));
           }}
           onPointerCancel={(event) => {
+            setPressed(false);
             const wasDragging = gesture.current?.axis === 'horizontal';
             gesture.current = null;
             releaseCapture(event.pointerId);
             if (wasDragging) { suppressClick.current = true; slide(0); }
           }}
           onLostPointerCapture={(event) => {
+            setPressed(false);
             if (gesture.current?.id !== event.pointerId || gesture.current.axis !== 'horizontal') return;
             gesture.current = null;
             suppressClick.current = true;
             slide(0);
           }}
+          onPointerLeave={() => { if (gesture.current?.axis !== 'horizontal') setPressed(false); }}
+          onKeyDownCapture={(event) => {
+            if ((event.key === ' ' || event.key === 'Enter') && (event.target as Element).closest('.start-play')) setPressed(true);
+          }}
+          onKeyUpCapture={(event) => { if (event.key === ' ' || event.key === 'Enter') setPressed(false); }}
+          onBlurCapture={() => setPressed(false)}
           onClickCapture={(event) => {
             if (!animation.current && (!suppressClick.current || event.detail === 0)) return;
             suppressClick.current = false;
@@ -143,7 +166,7 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
         >
           <div
             className={`routine-track${settling ? ' settling' : ''}`}
-            style={{ transform: `translate3d(calc(-100% + ${offset}px), 0, 0)` }}
+            style={{ transform: trackTransform }}
             onTransitionEnd={(event) => { if (event.target === event.currentTarget && event.propertyName === 'transform') finishSlide(); }}
           >
             {panelIds.map((id, index) => {

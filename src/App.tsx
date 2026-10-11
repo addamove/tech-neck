@@ -773,9 +773,7 @@ export default function App() {
             </button>
           </div>
           <div className="start-area">
-            {!selectedIsSaved && (
-              <span className="start-label">START TRAINING</span>
-            )}
+            <span className="start-label">{selectedIsSaved ? "CONTINUE TRAINING" : "START TRAINING"}</span>
             <RoutinePicker
               routines={ROUTINES}
               selectedId={selectedRoutine.id}
