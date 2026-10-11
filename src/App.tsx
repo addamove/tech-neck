@@ -4,7 +4,6 @@ import {
   ArrowRight,
   CalendarDays,
   Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -38,6 +37,7 @@ import ExerciseArt from "./components/ExerciseArt";
 import AboutPage from "./components/AboutPage";
 import ActivityCharts from "./components/ActivityCharts";
 import RoutinePicker from "./components/RoutinePicker";
+import SelectControl from "./components/SelectControl";
 import AchievementConfetti from "./components/AchievementConfetti";
 import { achievementSnapshot, newlyEarnedAchievements, type AchievementSnapshot } from "./components/achievementCelebration";
 
@@ -205,17 +205,11 @@ export default function App() {
   useEffect(() => {
     if (!showWorkout) homeLaunchGuard.current = false;
   }, [showWorkout]);
-  const totalSeconds = selectedRoutine.exercises.reduce(
-    (sum, item) => sum + item.durationSeconds + item.prepSeconds,
-    0,
-  );
-  const movementSeconds = selectedRoutine.exercises.reduce(
-    (sum, item) => sum + item.durationSeconds,
-    0,
-  );
   const activeScreen =
     !showAbout && showWorkout && session && frame && exercise;
   const finishScreen = activeScreen && session.phase === "complete";
+  const handsTheme = (activeScreen ? routine : selectedRoutine).id === "hands-level-1";
+  const brandName = handsTheme ? "wrist fix" : "tech neck";
   // Preview poses without advancing the exercise or scheduling active cues.
   // Doorway preparation keeps its initial pose; other demos freeze on pause.
   const preparationPoses = exercise.poses.filter(
@@ -481,7 +475,7 @@ export default function App() {
         <p>Tech Neck currently supports mobile screen sizes only. Open it on your phone or use a narrower window.</p>
       </div>
     </main>
-    <div className={`app-shell ${activeScreen ? "session-shell" : ""}`}>
+    <div className={`app-shell ${activeScreen ? "session-shell" : ""}`} data-theme={handsTheme ? "hands" : "neck"}>
       <header className="topbar">
         {showAbout ? (
           <>
@@ -492,11 +486,11 @@ export default function App() {
             <button
               type="button"
               className="brand-mark"
-              aria-label="Tech Neck home"
+              aria-label={`${handsTheme ? "Wrist Fix" : "Tech Neck"} home`}
               onClick={() => navigateToTab("train")}
             >
               <span className="brand-dot" />
-              tech neck
+              {brandName}
             </button>
           </>
         ) : activeScreen ? (
@@ -529,22 +523,22 @@ export default function App() {
             <button
               type="button"
               className="brand-mark"
-              aria-label="Tech Neck home"
+              aria-label={`${handsTheme ? "Wrist Fix" : "Tech Neck"} home`}
               onClick={() => {
                 setTab("train");
                 window.scrollTo(0, 0);
               }}
             >
               <span className="brand-dot" />
-              tech neck
+              {brandName}
             </button>
-            <button
+            {!handsTheme && <button
               className="top-icon"
               aria-label="About Tech Neck"
               onClick={openAbout}
             >
               <Info size={20} />
-            </button>
+            </button>}
           </>
         )}
       </header>
@@ -748,7 +742,7 @@ export default function App() {
           </main>
         )
       ) : tab === "train" ? (
-        <main className="home-screen">
+        <main className="home-screen" data-routine={selectedRoutine.id}>
           <div className="home-intro">
             <h1>
               Room to
@@ -782,26 +776,32 @@ export default function App() {
             {!selectedIsSaved && (
               <span className="start-label">START TRAINING</span>
             )}
-            <RoutinePicker routines={ROUTINES} selectedId={selectedRoutine.id} onChange={(id) => workout.updateSettings({ selectedRoutineId: id })}>
-            <button
-              className="start-play"
-              aria-label={
-                selectedIsSaved
-                  ? "Resume saved workout"
-                  : `Start ${selectedRoutine.title}`
-              }
-              onClick={launchHomeWorkout}
-            >
-              <span className="start-play-surface" aria-hidden="true" />
-              <Play size={43} fill="currentColor" strokeWidth={1.3} />
-            </button>
-            </RoutinePicker>
-            <span className="routine-meta">
-              {selectedRoutine.exercises.length} exercises <span>·</span>{" "}
-              {selectedRoutine.id === "hands-level-1" ? (
-                <>{movementSeconds / 60} min movement<br />{formatTime(totalSeconds).replace(/^0/, "")} total</>
-              ) : `${formatTime(totalSeconds)} min`} <span>·</span> +{selectedRoutine.xp} XP
-            </span>
+            <RoutinePicker
+              routines={ROUTINES}
+              selectedId={selectedRoutine.id}
+              onChange={(id) => workout.updateSettings({ selectedRoutineId: id })}
+              renderCard={(cardRoutine, disabled, selector) => (
+                <>
+                  <button
+                    className="start-play"
+                    disabled={disabled}
+                    aria-label={savedWorkout?.routineId === cardRoutine.id ? "Resume saved workout" : `Start ${cardRoutine.title}`}
+                    onClick={launchHomeWorkout}
+                  >
+                    <span className="start-play-surface" aria-hidden="true" />
+                    <Play size={43} fill="currentColor" strokeWidth={1.3} />
+                  </button>
+                  {selector}
+                  <span className="routine-meta">
+                    {cardRoutine.exercises.length} exercises <span>·</span>{" "}
+                    {cardRoutine.id === "hands-level-1"
+                      ? `${cardRoutine.exercises.reduce((sum, item) => sum + item.durationSeconds, 0) / 60} min movement`
+                      : `${formatTime(cardRoutine.exercises.reduce((sum, item) => sum + item.durationSeconds + item.prepSeconds, 0))} min`}
+                    <span>·</span> +{cardRoutine.xp} XP
+                  </span>
+                </>
+              )}
+            />
             {savedRoutine && !selectedIsSaved && (
               <button className="resume-other-routine" onClick={resumeExistingWorkout}><RotateCcw size={13} />Resume {savedRoutine.title}</button>
             )}
@@ -1036,8 +1036,7 @@ export default function App() {
             </fieldset>
             <label className="speed-setting">
               <span>Voice speed</span>
-              <span className="speed-select">
-                <select
+                <SelectControl
                   aria-label="Voice speed"
                   value={settings.voiceRate}
                   onChange={(e) =>
@@ -1054,9 +1053,7 @@ export default function App() {
                       {settings.voiceRate}× (imported)
                     </option>
                   )}
-                </select>
-                <ChevronDown size={14} aria-hidden="true" />
-              </span>
+                </SelectControl>
             </label>
             <Toggle
               checked={settings.wakeLockEnabled}
@@ -1398,14 +1395,14 @@ function Waves() {
     >
       <defs>
         <linearGradient id="home-wave-back" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#b5eee1" />
-          <stop offset="55%" stopColor="#a1e7e2" />
-          <stop offset="100%" stopColor="#87ddd5" />
+          <stop offset="0%" stopColor="var(--wave-back-one)" />
+          <stop offset="55%" stopColor="var(--wave-back-two)" />
+          <stop offset="100%" stopColor="var(--wave-back-three)" />
         </linearGradient>
         <linearGradient id="home-wave-front" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#8cddd1" />
-          <stop offset="50%" stopColor="#64ccbf" />
-          <stop offset="100%" stopColor="#98e5d9" />
+          <stop offset="0%" stopColor="var(--wave-front-one)" />
+          <stop offset="50%" stopColor="var(--wave-front-two)" />
+          <stop offset="100%" stopColor="var(--wave-front-three)" />
         </linearGradient>
       </defs>
       <path
