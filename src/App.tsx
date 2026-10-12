@@ -788,10 +788,10 @@ export default function App() {
             </p>
           </div>
           <div className="home-links">
-            <button className="home-xp-card" onClick={() => setTab("activity")} aria-label={`${stats.totalXp} total XP. View activity`}>
-              <Sparkles size={19} aria-hidden="true" />
-              <strong>{stats.totalXp}</strong>
-              <span>Total XP</span>
+            <button className="outline-button" onClick={() => setTab("activity")} aria-label={`${stats.totalXp} total XP. View activity`}>
+              <Sparkles size={18} aria-hidden="true" />
+              <span>{stats.totalXp} XP</span>
+              <ChevronRight size={18} aria-hidden="true" />
             </button>
           </div>
           <div className="start-area">
