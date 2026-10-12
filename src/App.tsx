@@ -141,6 +141,7 @@ export default function App() {
   );
   const [showExercises, setShowExercises] = useState(() => window.location.hash === "#/exercises");
   const exercisesAppEntry = useRef(false);
+  const exercisesOrigin = useRef<{ tab: Tab; scrollY: number } | null>(null);
   const aboutOrigin = useRef<{ tab: Tab; scrollY: number } | null>(null);
   const aboutAppEntry = useRef(false);
   const aboutRouteListener = useRef<() => void>(() => {});
@@ -296,6 +297,7 @@ export default function App() {
     aboutAppEntry.current = false;
   };
   const openExercises = () => {
+    exercisesOrigin.current = { tab, scrollY: window.scrollY };
     exercisesAppEntry.current = true;
     window.history.pushState(window.history.state, "", "#/exercises");
     setShowExercises(true);
@@ -333,8 +335,9 @@ export default function App() {
       window.scrollTo(0, 0);
     }
     if (showExercises && !nextExercises) {
-      setTab("settings");
-      window.scrollTo(0, 0);
+      const source = exercisesOrigin.current;
+      setTab(source?.tab ?? "settings");
+      window.requestAnimationFrame(() => window.scrollTo(0, source?.scrollY ?? 0));
     }
     const nextAbout = window.location.hash === "#/about";
     if (nextAbout) {
@@ -776,7 +779,6 @@ export default function App() {
         )
       ) : tab === "train" ? (
         <main className="home-screen" data-routine={selectedRoutine.id}>
-          <div className="home-summary">
           <div className="home-intro">
             <h1>
               Room to
@@ -794,7 +796,11 @@ export default function App() {
               <span>{stats.totalXp} XP</span>
               <ChevronRight size={18} aria-hidden="true" />
             </button>
-          </div>
+            <button className="outline-button" onClick={openExercises}>
+              <Settings2 size={18} aria-hidden="true" />
+              <span>Exercises</span>
+              <ChevronRight size={18} aria-hidden="true" />
+            </button>
           </div>
           <div className="start-area">
             <span className="start-label">{selectedIsSaved ? "CONTINUE TRAINING" : "START TRAINING"}</span>
@@ -1013,10 +1019,8 @@ export default function App() {
         </main>
       ) : (
         <main className="inner-screen settings-screen">
-          <span className="eyebrow">MAKE IT YOURS</span>
           <h1>Settings</h1>
           <section>
-            <h2>During your workout</h2>
             <Toggle
               checked={settings.voiceEnabled}
               onChange={() =>
