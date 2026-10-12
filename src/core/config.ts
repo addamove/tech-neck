@@ -107,10 +107,10 @@ export const LEVEL_2_ROUTINE: Routine = {
     ...(exercise.id === 'side-neck' ? longerSideNeck() : {}),
     ...(exercise.id === 'chest' ? { poses: [{ poseId: 'chest-left', seconds: 31, label: 'Left side' }, { poseId: 'chest-right', seconds: 31, label: 'Right side' }], cues: [{ atSeconds: 0, text: 'Start on your left side.' }, { atSeconds: 31, text: 'Switch to your right side.' }] } : {}),
   })), {
-    id: 'arm-circles', title: 'Gentle arm circles', durationSeconds: 30, prepSeconds: 20, prepPoseId: 'arm-circles-front',
-    description: 'Stand tall with your chin gently tucked. Extend your arms comfortably to the sides. Make small, slow circles forward for fifteen seconds, then backward for fifteen seconds. Keep your shoulders relaxed.',
-    poses: ['front', 'back'].flatMap(direction => Array.from({ length: 15 }, (_, index) => ({ poseId: `arm-circles-${direction}-${direction === 'front' ? index % 3 + 1 : [1, 3, 2][index % 3]}`, seconds: 1, label: `Small ${direction === 'front' ? 'forward' : 'backward'} circles` }))),
-    cues: [{ atSeconds: 0, text: 'Make small, slow circles forward.' }, { atSeconds: 15, text: 'Change direction. Make small, slow circles backward.' }],
+    id: 'arm-circles', title: 'Circular arm swings', durationSeconds: 30, prepSeconds: 20, prepPoseId: 'arm-circles-front',
+    description: 'Stand tall with your chin gently tucked and shoulders relaxed. With straight arms, slowly sweep forward and up overhead, then lower in a large, comfortable circular motion. Reverse direction after fifteen seconds.',
+    poses: ['front', 'back'].flatMap(direction => Array.from({ length: 9 }, (_, index) => ({ poseId: `arm-circles-${direction}-${direction === 'front' ? index % 3 + 1 : [1, 3, 2][index % 3]}`, seconds: 5 / 3, label: `Large ${direction === 'front' ? 'forward' : 'backward'} circles` }))),
+    cues: [{ atSeconds: 0, text: 'Slowly swing your straight arms forward and up in large, comfortable circles.' }, { atSeconds: 15, text: 'Reverse direction. Keep the circular swings slow and comfortable.' }],
   }, {
     id: 'head-turns', title: 'Gentle head turns', durationSeconds: 30, prepSeconds: 20, prepPoseId: 'head-turn-center',
     description: 'Sit or stand tall with your shoulders relaxed. Slowly turn your head to the left, return to center, then turn to the right. Stay within a comfortable range and move without force.',
@@ -118,6 +118,9 @@ export const LEVEL_2_ROUTINE: Routine = {
     cues: [{ atSeconds: 0, text: 'Turn slowly within a comfortable range, without force.' }, { atSeconds: 15, text: 'Keep your shoulders relaxed and move without force.' }],
   }],
 };
+export const LEGACY_LEVEL_2_EXERCISE_IDS = ['chin-tuck', 'snow-angel', 'bent-angel', 'arm-lift', 'back-neck', 'side-neck', 'chest', 'arm-circles', 'head-turns'];
+const level2Order = ['chin-tuck', 'snow-angel', 'bent-angel', 'arm-lift', 'arm-circles', 'back-neck', 'side-neck', 'head-turns', 'chest'];
+LEVEL_2_ROUTINE.exercises = level2Order.map(id => LEVEL_2_ROUTINE.exercises.find(exercise => exercise.id === id)!);
 export const ROUTINES: Routine[] = [{ family: 'neck', id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }, LEVEL_2_ROUTINE, HANDS_ROUTINE];
 export const DEFAULT_ROUTINE = ROUTINES[0];
 export const DEFAULT_DATA: AppData = {

@@ -163,19 +163,20 @@ for (const [style, poses] of Object.entries(STYLE_POSES)) {
     for (const phase of [1, 2, 3]) {
       poses[`arm-circles-${direction}-${phase}`] = {
         sheet: `neck-level2/${style}/arm-circle-${phase}`,
-        x: 0, width: 512, height: 554 * 512 / 418, sheetWidth: 512,
+        x: 0, width: 527, height: 887, sheetWidth: [443, 527, 360][phase - 1],
       };
     }
     poses[`arm-circles-${direction}`] = poses[`arm-circles-${direction}-1`];
   }
   // Measured torso centers on the three native 418px arm cells. Translate
   // the fixed trunk only; the artwork pixels and character scale stay intact.
-  const offsets = { male: [0, 4, 9], female: [0, 1.5, 7], marker: [0, 2, 9] }[style as IllustrationStyle];
+  const offsets = { male: [8, 12, 70], female: [0, 17, 78], marker: [0, 52, 78] }[style as IllustrationStyle];
   for (const direction of ["front", "back"]) {
     for (const phase of [1, 2, 3]) {
       poses[`arm-circles-${direction}-${phase}`].alignment = {
-        scale: 1, x: offsets[phase - 1] * 512 / 418, y: 0, stageWidth: 512,
+        scale: 1, x: offsets[phase - 1], y: 0, stageWidth: 527,
       };
+      poses[`arm-circles-${direction}-${phase}`].arrowTransform = `translate(${-offsets[phase - 1]} 0)`;
     }
   }
   // Register the front-facing torso to the turned view; the mirrored turn
@@ -297,14 +298,14 @@ MOVEMENTS["head-turn-center"] = { label: "Return your head to center.", arrows: 
 for (const direction of ["front", "back"]) {
   const forward = direction === "front";
   const movement = {
-    label: `Make small controlled arm circles ${forward ? "forward" : "backward"}. Keep your arms at shoulder height.`,
-    arrows: [80, 432].map((x) => forward ? {
-      path: `M${x - 20} 220A27 27 0 1 1 ${x + 24} 235`,
-      head: `M${x + 13} 250L${x + 14} 225L${x + 33} 239Z`,
-    } : {
-      path: `M${x + 20} 220A27 27 0 1 0 ${x - 24} 235`,
-      head: `M${x - 13} 250L${x - 33} 239L${x - 14} 225Z`,
-    }),
+    label: `Make large controlled arm swings ${forward ? "forward" : "backward"}. Keep your torso still and move through a comfortable range.`,
+    arrows: forward ? [{
+      path: "M305 500C490 470 480 160 330 105",
+      head: "M302 96L325 123L337 90Z",
+    }] : [{
+      path: "M330 105C480 160 490 470 305 500",
+      head: "M275 502L308 516L309 484Z",
+    }],
   };
   MOVEMENTS[`arm-circles-${direction}`] = movement;
   for (const phase of [1, 2, 3]) MOVEMENTS[`arm-circles-${direction}-${phase}`] = movement;

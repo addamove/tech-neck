@@ -71,6 +71,53 @@ test('fractional timer accumulation survives active and completed backup bounds'
 
 test('backward circles reverse the same three art frames', () => {
   const circles = LEVEL_2_ROUTINE.exercises.find(exercise => exercise.id === 'arm-circles')!;
-  assert.deepEqual([0, 1, 2].map(at => getPose(circles, at).poseId), ['arm-circles-front-1', 'arm-circles-front-2', 'arm-circles-front-3']);
-  assert.deepEqual([15, 16, 17].map(at => getPose(circles, at).poseId), ['arm-circles-back-1', 'arm-circles-back-3', 'arm-circles-back-2']);
+  assert.deepEqual([0, 5 / 3 + 0.001, 10 / 3 + 0.001].map(at => getPose(circles, at).poseId), ['arm-circles-front-1', 'arm-circles-front-2', 'arm-circles-front-3']);
+  assert.deepEqual([15.001, 15 + 5 / 3 + 0.001, 15 + 10 / 3 + 0.001].map(at => getPose(circles, at).poseId), ['arm-circles-back-1', 'arm-circles-back-3', 'arm-circles-back-2']);
+});
+
+test('Level 2 uses large circular swings in new order without changing work budget', () => {
+  assert.deepEqual(LEVEL_2_ROUTINE.exercises.map(exercise => exercise.id), ['chin-tuck', 'snow-angel', 'bent-angel', 'arm-lift', 'arm-circles', 'back-neck', 'side-neck', 'head-turns', 'chest']);
+  assert.equal(getFrame(null, LEVEL_2_ROUTINE).workRemainingSeconds, 420);
+  const swings = LEVEL_2_ROUTINE.exercises[4];
+  assert.equal(swings.title, 'Circular arm swings');
+  assert.ok(swings.description.includes('large, comfortable circular motion'));
+  assert.ok(!swings.description.includes('small'));
+  assert.ok(!swings.description.includes('behind'));
+  assert.equal(swings.cues[1].atSeconds, 15);
+  for (const cycle of [0, 5, 10]) {
+    assert.equal(getPose(swings, cycle + 0.001).poseId, 'arm-circles-front-1');
+    assert.equal(getPose(swings, cycle + 15.001).poseId, 'arm-circles-back-1');
+  }
+  assert.equal(getPose(swings, 14.999).poseId, 'arm-circles-front-3');
+  assert.equal(getPose(swings, 15).poseId, 'arm-circles-back-1');
+});
+
+test('published Level 2 order and legacy index-based sessions retain their exercise meaning', () => {
+  const oldIds = ['chin-tuck', 'snow-angel', 'bent-angel', 'arm-lift', 'back-neck', 'side-neck', 'chest', 'arm-circles', 'head-turns'];
+  const oldRoutine = { ...LEVEL_2_ROUTINE, exercises: oldIds.map(id => LEVEL_2_ROUTINE.exercises.find(exercise => exercise.id === id)!) };
+  const started = new Date('2026-10-12T10:00:00.000Z');
+  const oldSession = advanceSession(createSession(oldRoutine, 'legacy-level-2', started), 362000, oldRoutine);
+  assert.equal(oldSession.exerciseIndex, 5);
+  const data = { ...freshData(), session: oldSession };
+  assert.deepEqual(parseImport(JSON.stringify(data)), data);
+  const legacy = structuredClone(data); delete legacy.session.exerciseIds;
+  const restored = parseImport(JSON.stringify(legacy));
+  assert.deepEqual(restored.session!.exerciseIds, oldIds);
+  assert.equal(getSessionRoutine(restored.session!).exercises[restored.session!.exerciseIndex].id, 'side-neck');
+  const oldComplete = advanceSession(oldSession, 999999, oldRoutine);
+  const oldCompletion = completionFor(oldComplete, oldRoutine, new Date('2026-10-12T11:00:00.000Z'));
+  const completeData = { ...freshData(), session: oldComplete, completions: [oldCompletion] };
+  assert.deepEqual(parseImport(JSON.stringify(completeData)), completeData);
+  delete completeData.session.exerciseIds; delete completeData.completions[0].exerciseIds;
+  const migrated = parseImport(JSON.stringify(completeData));
+  assert.deepEqual(migrated.session!.exerciseIds, oldIds);
+  assert.deepEqual(migrated.completions[0].exerciseIds, oldIds);
+  // Subsets of either published order remain valid, arbitrary reorderings reject.
+  for (const ids of [['back-neck', 'chest', 'arm-circles'], ['arm-circles', 'back-neck', 'chest']]) {
+    const subset = { ...LEVEL_2_ROUTINE, exercises: ids.map(id => LEVEL_2_ROUTINE.exercises.find(exercise => exercise.id === id)!) };
+    const session = createSession(subset, 'subset-order', started);
+    assert.deepEqual(parseImport(JSON.stringify({ ...freshData(), session })).session!.exerciseIds, ids);
+  }
+  const invalid = createSession(oldRoutine, 'bad-order', started); invalid.exerciseIds = ['chest', 'chin-tuck'];
+  assert.throws(() => parseImport(JSON.stringify({ ...freshData(), session: invalid })), /snapshot/);
 });

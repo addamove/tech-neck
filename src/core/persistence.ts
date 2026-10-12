@@ -1,5 +1,5 @@
 import { rememberedRoutines } from './routineFamilies';
-import { DEFAULT_DATA, ROUTINES } from './config';
+import { DEFAULT_DATA, ROUTINES, LEGACY_LEVEL_2_EXERCISE_IDS } from './config';
 import type { AppData, Completion, Exercise, Routine, Session } from './types';
 
 export const STORAGE_KEY = 'tech-neck:v1';
@@ -36,11 +36,19 @@ function exerciseIds(value: unknown, label: string, validIds: string[]): string[
   if (!Array.isArray(value) || value.length > validIds.length || value.some(id => typeof id !== 'string' || !validIds.includes(id)) || new Set(value).size !== value.length) fail(`${label} contains invalid exercise IDs.`);
   return value as string[];
 }
+function validateSnapshot(value: unknown, routine: Routine): string[] | undefined {
+  const canonicalIds = routine.exercises.map(exercise => exercise.id);
+  // Earlier Level 2 saves indexed the original published order before snapshots.
+  if (value === undefined) return routine.id === 'level-2' ? [...LEGACY_LEVEL_2_EXERCISE_IDS] : undefined;
+  const snapshot = exerciseIds(value, 'exerciseIds', canonicalIds);
+  const orders = routine.id === 'level-2' ? [canonicalIds, LEGACY_LEVEL_2_EXERCISE_IDS] : [canonicalIds];
+  if (!snapshot.length || !orders.some(order => snapshot.every((id, index) => index === 0 || order.indexOf(id) > order.indexOf(snapshot[index - 1])))) fail('Exercise snapshot must be nonempty and in routine order.');
+  return snapshot;
+}
 function validateSession(value: unknown): Session {
   const item = object(value, 'session');
   const canonical = routineFor(item.routineId);
-  const snapshot = item.exerciseIds === undefined ? undefined : exerciseIds(item.exerciseIds, 'exerciseIds', canonical.exercises.map(exercise => exercise.id));
-  if (snapshot && (!snapshot.length || snapshot.some((id, index) => index > 0 && canonical.exercises.findIndex(exercise => exercise.id === id) <= canonical.exercises.findIndex(exercise => exercise.id === snapshot[index - 1])))) fail('Exercise snapshot must be nonempty and in routine order.');
+  const snapshot = validateSnapshot(item.exerciseIds, canonical);
   const routine = snapshot ? { ...canonical, exercises: snapshot.map(id => canonical.exercises.find(exercise => exercise.id === id)!) } : canonical;
   text(item.id, 'session.id'); date(item.startedAt, 'session.startedAt');
   if (!['prep', 'active', 'complete'].includes(item.phase as string)) fail('Unknown session phase.');
@@ -77,8 +85,7 @@ function validateCompletion(value: unknown): Completion {
   elapsed(item.elapsedMs, maximumElapsedMs(routine));
   if (item.xp !== routine.xp) fail('Invalid completion XP.');
   const canonicalIds = routine.exercises.map(ex => ex.id);
-  const snapshot = item.exerciseIds === undefined ? undefined : exerciseIds(item.exerciseIds, 'exerciseIds', canonicalIds);
-  if (snapshot && (!snapshot.length || snapshot.some((id, index) => index > 0 && canonicalIds.indexOf(id) <= canonicalIds.indexOf(snapshot[index - 1])))) fail('Exercise snapshot must be nonempty and in routine order.');
+  const snapshot = validateSnapshot(item.exerciseIds, routine);
   const ids = snapshot ?? canonicalIds;
   if (snapshot) elapsed(item.elapsedMs, routine.exercises.filter(exercise => snapshot.includes(exercise.id)).reduce((sum, exercise) => sum + exercise.prepSeconds + exercise.durationSeconds, 0) * 1000);
   const skipped = exerciseIds(item.skippedExerciseIds, 'skippedExerciseIds', ids);

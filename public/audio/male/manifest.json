@@ -158,5 +158,17 @@
   "Keep your shoulders relaxed and move without force.": {
     "src": "/audio/male/f8bae023f62a2d35.mp3",
     "duration": 2.833958
+  },
+  "Stand tall with your chin gently tucked and shoulders relaxed. With straight arms, slowly sweep forward and up overhead, then lower in a large, comfortable circular motion. Reverse direction after fifteen seconds.": {
+    "src": "/audio/male/e7846304dd91b56f.mp3",
+    "duration": 12.969
+  },
+  "Slowly swing your straight arms forward and up in large, comfortable circles.": {
+    "src": "/audio/male/46bde49d889dd601.mp3",
+    "duration": 4.588167
+  },
+  "Reverse direction. Keep the circular swings slow and comfortable.": {
+    "src": "/audio/male/c31b1da3825e8f6c.mp3",
+    "duration": 3.804375
   }
 }
