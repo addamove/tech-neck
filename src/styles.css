@@ -2051,3 +2051,5 @@ svg {
 .exercises-settings-section { margin-top: 30px; }
 .exercises-settings-link { color: var(--deep); font: inherit; text-decoration: none; }
 .exercises-settings-description { font-size: 11px; color: var(--muted); line-height: 1.6; margin: 9px 0 14px; }
+
+.home-summary { width: max-content; max-width: 100%; align-self: flex-start; }

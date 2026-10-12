@@ -776,6 +776,7 @@ export default function App() {
         )
       ) : tab === "train" ? (
         <main className="home-screen" data-routine={selectedRoutine.id}>
+          <div className="home-summary">
           <div className="home-intro">
             <h1>
               Room to
@@ -793,6 +794,7 @@ export default function App() {
               <span>{stats.totalXp} XP</span>
               <ChevronRight size={18} aria-hidden="true" />
             </button>
+          </div>
           </div>
           <div className="start-area">
             <span className="start-label">{selectedIsSaved ? "CONTINUE TRAINING" : "START TRAINING"}</span>
