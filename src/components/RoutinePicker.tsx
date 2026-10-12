@@ -2,18 +2,21 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Routine } from '../core/types';
 import { adjacentRoutineId, carouselDestination, carouselDragOffset, routineCarouselDirection } from './routineSwipe';
+import { familyRoutineIds, routineFamily } from '../core/routineFamilies';
 import SelectControl from './SelectControl';
 
 const SNAP_MS = 350;
 type Gesture = { id: number; x: number; y: number; startedAt: number; width: number; axis: 'horizontal' | 'vertical' | null };
 
-export default function RoutinePicker({ routines, selectedId, onChange, renderCard }: {
+export default function RoutinePicker({ routines, selectedId, rememberedRoutineIds, onChange, renderCard }: {
   routines: Routine[];
   selectedId: string;
+  rememberedRoutineIds?: Record<string, string>;
   onChange: (id: string) => void;
   renderCard: (routine: Routine, disabled: boolean, selector: ReactNode) => ReactNode;
 }) {
   const [displayedId, setDisplayedId] = useState(selectedId);
+  const [incoming, setIncoming] = useState<{ id: string; direction: -1 | 1 } | null>(null);
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [settling, setSettling] = useState(false);
@@ -26,11 +29,12 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
   onChangeRef.current = onChange;
   const displayedIdRef = useRef(displayedId);
   displayedIdRef.current = displayedId;
-  const ids = routines.map((routine) => routine.id);
+  const ids = familyRoutineIds(routines, displayedId, rememberedRoutineIds);
 
   const cancelMotion = () => {
     if (animation.current) clearTimeout(animation.current.timer);
     animation.current = null;
+    setIncoming(null);
     gesture.current = null;
     setOffset(0);
     setDragging(false);
@@ -61,6 +65,7 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
     clearTimeout(pending.timer);
     animation.current = null;
     setSettling(false);
+    setIncoming(null);
     setOffset(0);
     setDisplayedId(pending.target);
     if (pending.target !== displayedIdRef.current) onChangeRef.current(pending.target);
@@ -77,19 +82,30 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
       if (target !== displayedIdRef.current) onChangeRef.current(target);
       return;
     }
+    if (explicitTarget && direction) setIncoming({ id: explicitTarget, direction });
     setSettling(true);
     setOffset(destination.offset);
     animation.current = { target, timer: setTimeout(finishSlide, SNAP_MS + 60) };
   };
   const selectRoutine = (target: string) => {
     if (target === displayedIdRef.current) return;
-    const direction = adjacentRoutineId(ids, displayedIdRef.current, 1) === target ? 1 : -1;
+    const current = routines.find(item => item.id === displayedIdRef.current)!;
+    const next = routines.find(item => item.id === target)!;
+    // Level changes replace the same family card without a misleading slide.
+    if (routineFamily(current) === routineFamily(next)) {
+      cancelMotion();
+      setDisplayedId(target);
+      onChangeRef.current(target);
+      return;
+    }
+    const adjacent = routines.find(item => item.id === adjacentRoutineId(ids, displayedIdRef.current, 1))!;
+    const direction = routineFamily(adjacent) === routineFamily(next) ? 1 : -1;
     slide(direction, target);
   };
   const releaseCapture = (id: number) => {
     if (viewport.current?.hasPointerCapture(id)) viewport.current.releasePointerCapture(id);
   };
-  const panelIds = [adjacentRoutineId(ids, displayedId, -1), displayedId, adjacentRoutineId(ids, displayedId, 1)];
+  const panelIds = [incoming?.direction === -1 ? incoming.id : adjacentRoutineId(ids, displayedId, -1), displayedId, incoming?.direction === 1 ? incoming.id : adjacentRoutineId(ids, displayedId, 1)];
   const progress = offset / (viewport.current?.getBoundingClientRect().width || 1);
   const glowVisibility = [Math.max(0, progress), 1 - Math.abs(progress), Math.max(0, -progress)];
   const trackTransform = `translate3d(calc(-100% + ${offset}px), 0, 0)`;
@@ -190,7 +206,7 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
         <button type="button" className="routine-step previous" aria-label="Previous routine" disabled={settling || dragging} onClick={() => slide(-1)}><ChevronLeft size={20} /></button>
         <button type="button" className="routine-step next" aria-label="Next routine" disabled={settling || dragging} onClick={() => slide(1)}><ChevronRight size={20} /></button>
       </div>
-      <span className="routine-dots" aria-hidden="true">{routines.map((routine) => <i key={routine.id} className={routine.id === displayedId ? 'current' : ''} />)}</span>
+      <span className="routine-dots" aria-hidden="true">{ids.map((id) => <i key={id} className={id === displayedId ? 'current' : ''} />)}</span>
     </div>
   );
 }

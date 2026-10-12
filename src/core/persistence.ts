@@ -1,3 +1,4 @@
+import { rememberedRoutines } from './routineFamilies';
 import { DEFAULT_DATA, ROUTINES } from './config';
 import type { AppData, Completion, Exercise, Routine, Session } from './types';
 
@@ -116,7 +117,7 @@ export function validateData(value: unknown): AppData {
     const completion = completions.find(item => item.id === session.id);
     if (!completion || completion.routineId !== session.routineId || completion.startedAt !== session.startedAt || completion.elapsedMs !== session.elapsedMs || JSON.stringify(completion.exerciseIds) !== JSON.stringify(session.exerciseIds) || JSON.stringify(completion.completedExerciseIds) !== JSON.stringify(session.completedExerciseIds) || JSON.stringify(completion.skippedExerciseIds) !== JSON.stringify(session.skippedExerciseIds)) fail('Completed session has no matching completion record.');
   }
-  return { format: 'tech-neck', version: 1, settings: { voiceEnabled: settings.voiceEnabled, voiceRate: Math.min(1.5, settings.voiceRate), disabledExerciseIds, voiceGender, illustrationStyle, wakeLockEnabled: settings.wakeLockEnabled, selectedRoutineId: selectedRoutine.id }, completions, session };
+  return { format: 'tech-neck', version: 1, settings: { voiceEnabled: settings.voiceEnabled, voiceRate: Math.min(1.5, settings.voiceRate), disabledExerciseIds, voiceGender, illustrationStyle, wakeLockEnabled: settings.wakeLockEnabled, selectedRoutineId: selectedRoutine.id, ...(settings.rememberedRoutineIds !== undefined ? { rememberedRoutineIds: rememberedRoutines(ROUTINES, selectedRoutine.id, settings.rememberedRoutineIds) } : {}) }, completions, session };
 }
 export function parseImport(textValue: string): AppData {
   if (new TextEncoder().encode(textValue).length > MAX_IMPORT_BYTES) fail('File exceeds the 2 MB limit.');

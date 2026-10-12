@@ -102,7 +102,7 @@ function longerSideNeck(): Pick<Exercise, 'poses' | 'cues'> {
 }
 const level2Durations: Record<string, number> = { 'chin-tuck': 82, 'back-neck': 58, 'side-neck': 68, chest: 62 };
 export const LEVEL_2_ROUTINE: Routine = {
-  id: 'level-2', title: 'Tech Neck · Level 2', subtitle: '9 exercises for your neck and shoulders', xp: 10,
+  family: 'neck', id: 'level-2', title: 'Tech Neck · Level 2', subtitle: '9 exercises for your neck and shoulders', xp: 10,
   exercises: [...exercises.map(exercise => ({ ...exercise, durationSeconds: level2Durations[exercise.id] ?? exercise.durationSeconds,
     ...(exercise.id === 'side-neck' ? longerSideNeck() : {}),
     ...(exercise.id === 'chest' ? { poses: [{ poseId: 'chest-left', seconds: 31, label: 'Left side' }, { poseId: 'chest-right', seconds: 31, label: 'Right side' }], cues: [{ atSeconds: 0, text: 'Start on your left side.' }, { atSeconds: 31, text: 'Switch to your right side.' }] } : {}),
@@ -118,7 +118,7 @@ export const LEVEL_2_ROUTINE: Routine = {
     cues: [{ atSeconds: 0, text: 'Turn slowly within a comfortable range, without force.' }, { atSeconds: 15, text: 'Keep your shoulders relaxed and move without force.' }],
   }],
 };
-export const ROUTINES: Routine[] = [{ id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }, LEVEL_2_ROUTINE, HANDS_ROUTINE];
+export const ROUTINES: Routine[] = [{ family: 'neck', id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }, LEVEL_2_ROUTINE, HANDS_ROUTINE];
 export const DEFAULT_ROUTINE = ROUTINES[0];
 export const DEFAULT_DATA: AppData = {
   format: 'tech-neck', version: 1,

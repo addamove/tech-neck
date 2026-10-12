@@ -1,3 +1,4 @@
+import { rememberRoutineSelection } from './routineFamilies';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ROUTINES, getRoutine, getSelectedRoutine, getSessionRoutine } from './config';
 import { advanceSession, completionFor, createSession, getFrame, recordCompletion, skipExercise, skipPreparation } from './engine';
@@ -125,7 +126,7 @@ export function useWorkout(options: { routineId?: string } = {}) {
     timerMark.current = performance.now();
     // Play synchronously within the button gesture so bundled audio unlocks on phones.
     speakPreparation(nextSession, current.settings);
-    setData(previous => ({ ...previous, session: nextSession, settings: { ...previous.settings, selectedRoutineId: selected.id } }));
+    setData(previous => ({ ...previous, session: nextSession, settings: { ...previous.settings, selectedRoutineId: selected.id, rememberedRoutineIds: rememberRoutineSelection(ROUTINES, previous.settings.selectedRoutineId, selected.id, previous.settings.rememberedRoutineIds) } }));
   }, [options.routineId, speakPreparation]);
   const resume = useCallback(() => {
     const current = dataRef.current;
@@ -173,7 +174,7 @@ export function useWorkout(options: { routineId?: string } = {}) {
       }
       settings = { ...settings, disabledExerciseIds: normalized };
     }
-    setData(previous => ({ ...previous, settings: { ...previous.settings, ...settings, voiceRate: Math.max(0.5, Math.min(1.5, settings.voiceRate !== undefined && Number.isFinite(settings.voiceRate) ? settings.voiceRate : previous.settings.voiceRate)), selectedRoutineId: getRoutine(settings.selectedRoutineId ?? previous.settings.selectedRoutineId).id } }));
+    setData(previous => ({ ...previous, settings: { ...previous.settings, ...settings, voiceRate: Math.max(0.5, Math.min(1.5, settings.voiceRate !== undefined && Number.isFinite(settings.voiceRate) ? settings.voiceRate : previous.settings.voiceRate)), selectedRoutineId: getRoutine(settings.selectedRoutineId ?? previous.settings.selectedRoutineId).id, rememberedRoutineIds: rememberRoutineSelection(ROUTINES, previous.settings.selectedRoutineId, settings.selectedRoutineId ?? previous.settings.selectedRoutineId, settings.rememberedRoutineIds ?? previous.settings.rememberedRoutineIds) } }));
   }, []);
   const setExerciseEnabled = useCallback((routineId: string, exerciseId: string, enabled: boolean): boolean => {
     const canonical = getRoutine(routineId);

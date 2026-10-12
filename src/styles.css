@@ -2051,3 +2051,9 @@ svg {
 .exercises-settings-section { margin-top: 30px; }
 .exercises-settings-link { color: #288c82; font: inherit; text-decoration: none; }
 .exercises-settings-description { font-size: 11px; color: var(--muted); line-height: 1.6; margin: 9px 0 14px; }
+
+.home-xp-card { width: 126px; min-height: 112px; align-self: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--teal); border-radius: 17px; background: color-mix(in srgb, var(--teal) 8%, white); color: var(--deep); padding: 12px; }
+.home-xp-card svg { color: var(--teal); }
+.home-xp-card strong { font-size: 30px; line-height: 1.1; font-weight: 500; }
+.home-xp-card span { color: var(--muted); font-size: 11px; }
+@media (max-height: 700px) { .home-xp-card { min-height: 98px; width: 112px; padding: 10px; } }

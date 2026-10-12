@@ -12,7 +12,7 @@ function movement(id: string, title: string, description: string, labels: [strin
 }
 
 export const HANDS_ROUTINE: Routine = {
-  id: 'hands-level-1', title: 'Hands · Level 1', subtitle: '5 gentle movements for your hands and wrists', xp: 5,
+  family: 'hands', id: 'hands-level-1', title: 'Hands · Level 1', subtitle: '5 gentle movements for your hands and wrists', xp: 5,
   exercises: [
     movement('hands-spread', 'Finger spread', 'Keep both wrists straight. Slowly spread your fingers, then bring them together. Use a comfortable range.', ['Spread your fingers', 'Bring your fingers together'], 'Keep your shoulders relaxed.'),
     movement('hands-bends', 'Finger bends', 'Keep both wrists straight. Slowly curl your fingers toward your palms, then open your hands. Do not squeeze or hold.', ['Gently bend your fingers', 'Open your hands'], 'Keep your grip soft and relaxed.'),

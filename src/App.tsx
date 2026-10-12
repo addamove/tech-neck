@@ -788,27 +788,17 @@ export default function App() {
             </p>
           </div>
           <div className="home-links">
-            <button
-              className="outline-button"
-              onClick={() => setTab("activity")}
-            >
-              <Sparkles size={18} />
-              <span>{stats.totalXp} XP</span>
-              <ChevronRight size={18} />
-            </button>
-            <button
-              className="outline-button"
-              onClick={() => setTab("settings")}
-            >
-              <Settings2 size={18} />
-              <span>Settings</span>
-              <ChevronRight size={18} />
+            <button className="home-xp-card" onClick={() => setTab("activity")} aria-label={`${stats.totalXp} total XP. View activity`}>
+              <Sparkles size={19} aria-hidden="true" />
+              <strong>{stats.totalXp}</strong>
+              <span>Total XP</span>
             </button>
           </div>
           <div className="start-area">
             <span className="start-label">{selectedIsSaved ? "CONTINUE TRAINING" : "START TRAINING"}</span>
             <RoutinePicker
               routines={workout.routines}
+              rememberedRoutineIds={settings.rememberedRoutineIds}
               selectedId={selectedRoutine.id}
               onChange={(id) => workout.updateSettings({ selectedRoutineId: id })}
               renderCard={(cardRoutine, disabled, selector) => (
