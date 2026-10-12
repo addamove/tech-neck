@@ -5,13 +5,18 @@ export const STORAGE_KEY = 'tech-neck:v1';
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 // Version1 backups used60-second chin tucks and90-second arm exercises. Keep their actual elapsed
 // times valid when loading history after the routine is shortened.
-const legacyWorkSeconds: Record<string, number> = { 'chin-tuck': 60, 'snow-angel': 90, 'bent-angel': 90, 'arm-lift': 90 };
+const legacyWorkSeconds: Record<string, number> = { 'chin-tuck': 60, 'snow-angel': 90, 'bent-angel': 90, 'arm-lift': 90, chest: 50 };
 function maximumWorkSeconds(routine: Routine, exercise: Exercise): number {
   return routine.id === 'level-1' && legacyWorkSeconds[exercise.id] !== undefined
     ? Math.max(legacyWorkSeconds[exercise.id], exercise.durationSeconds) : exercise.durationSeconds;
 }
+// Fractional performance.now() deltas can accumulate IEEE-754 rounding noise.
+const ELAPSED_TOLERANCE_MS = 0.001;
+function elapsed(value: unknown, maximum: number): asserts value is number {
+  number(value, 'elapsedMs', 0, maximum + ELAPSED_TOLERANCE_MS);
+}
 function maximumElapsedMs(routine: Routine): number {
-  return routine.exercises.reduce((sum, exercise) => sum + exercise.prepSeconds + maximumWorkSeconds(routine, exercise), 0) * 1000;
+  return Math.max(routine.id === 'level-1' ? 600000 : 0, routine.exercises.reduce((sum, exercise) => sum + exercise.prepSeconds + exercise.durationSeconds, 0) * 1000);
 }
 function fail(message: string): never { throw new Error(`Invalid backup: ${message}`); }
 function object(value: unknown, label: string): Record<string, unknown> {
@@ -32,31 +37,35 @@ function exerciseIds(value: unknown, label: string, validIds: string[]): string[
 }
 function validateSession(value: unknown): Session {
   const item = object(value, 'session');
-  const routine = routineFor(item.routineId);
+  const canonical = routineFor(item.routineId);
+  const snapshot = item.exerciseIds === undefined ? undefined : exerciseIds(item.exerciseIds, 'exerciseIds', canonical.exercises.map(exercise => exercise.id));
+  if (snapshot && (!snapshot.length || snapshot.some((id, index) => index > 0 && canonical.exercises.findIndex(exercise => exercise.id === id) <= canonical.exercises.findIndex(exercise => exercise.id === snapshot[index - 1])))) fail('Exercise snapshot must be nonempty and in routine order.');
+  const routine = snapshot ? { ...canonical, exercises: snapshot.map(id => canonical.exercises.find(exercise => exercise.id === id)!) } : canonical;
   text(item.id, 'session.id'); date(item.startedAt, 'session.startedAt');
   if (!['prep', 'active', 'complete'].includes(item.phase as string)) fail('Unknown session phase.');
   number(item.exerciseIndex, 'exerciseIndex', 0, routine.exercises.length - 1);
   if (!Number.isInteger(item.exerciseIndex)) fail('exerciseIndex must be an integer.');
   const exercise = routine.exercises[item.exerciseIndex];
-  const maximumPhaseMs = (item.phase === 'prep' ? exercise.prepSeconds : maximumWorkSeconds(routine, exercise)) * 1000;
+  const maximumPhaseMs = (item.phase === 'prep' ? exercise.prepSeconds : snapshot ? exercise.durationSeconds : maximumWorkSeconds(routine, exercise)) * 1000;
   number(item.phaseElapsedMs, 'phaseElapsedMs', 0, maximumPhaseMs);
-  number(item.elapsedMs, 'elapsedMs', 0, maximumElapsedMs(routine));
-  if (item.phaseElapsedMs > item.elapsedMs) fail('Phase elapsed time cannot exceed total time.');
+  elapsed(item.elapsedMs, snapshot ? routine.exercises.reduce((sum, exercise) => sum + exercise.prepSeconds + exercise.durationSeconds, 0) * 1000 : maximumElapsedMs(routine));
+  if (item.phaseElapsedMs > item.elapsedMs + ELAPSED_TOLERANCE_MS) fail('Phase elapsed time cannot exceed total time.');
   if (item.phase !== 'complete' && item.phaseElapsedMs >= maximumPhaseMs) fail('Session phase has already ended.');
   boolean(item.paused, 'paused');
   const validIds = routine.exercises.map(ex => ex.id);
   const skipped = exerciseIds(item.skippedExerciseIds, 'skippedExerciseIds', validIds);
   const completed = exerciseIds(item.completedExerciseIds, 'completedExerciseIds', validIds);
   if (skipped.some(id => completed.includes(id))) fail('Exercise cannot be skipped and completed.');
+  if (snapshot && item.elapsedMs + ELAPSED_TOLERANCE_MS < completed.reduce((sum, id) => sum + routine.exercises.find(exercise => exercise.id === id)!.durationSeconds * 1000, 0) + (item.phase === 'complete' ? 0 : item.phaseElapsedMs)) fail('Elapsed time is inconsistent with completed exercise work.');
   const progressedIds = [...skipped, ...completed];
   const expectedCount = item.phase === 'complete' ? routine.exercises.length : item.exerciseIndex;
   if (progressedIds.length !== expectedCount || validIds.slice(0, expectedCount).some(id => !progressedIds.includes(id))) fail('Session exercise progress is inconsistent.');
   if (item.phase === 'complete' && (item.exerciseIndex !== routine.exercises.length - 1 || item.phaseElapsedMs !== 0)) fail('Completed session is inconsistent.');
-  const session: Session = { id: item.id, routineId: routine.id, startedAt: item.startedAt, phase: item.phase as Session['phase'], exerciseIndex: item.exerciseIndex, phaseElapsedMs: item.phaseElapsedMs, elapsedMs: item.elapsedMs, paused: item.paused, skippedExerciseIds: skipped, completedExerciseIds: completed };
+  const session: Session = { ...(snapshot ? { exerciseIds: snapshot } : {}), id: item.id, routineId: routine.id, startedAt: item.startedAt, phase: item.phase as Session['phase'], exerciseIndex: item.exerciseIndex, phaseElapsedMs: item.phaseElapsedMs, elapsedMs: item.elapsedMs, paused: item.paused, skippedExerciseIds: skipped, completedExerciseIds: completed };
   if (session.phase === 'active' && session.phaseElapsedMs >= exercise.durationSeconds * 1000 && routine.id === 'level-1' && legacyWorkSeconds[exercise.id] !== undefined) {
     // The old session already did the shortened exercise. Preserve the time
     // actually spent and wait at the next preparation without running it.
-    return { ...session, phase: 'prep', exerciseIndex: session.exerciseIndex + 1, phaseElapsedMs: 0, paused: true, completedExerciseIds: [...completed, exercise.id] };
+    return { ...session, phase: session.exerciseIndex + 1 === routine.exercises.length ? 'complete' : 'prep', exerciseIndex: Math.min(session.exerciseIndex + 1, routine.exercises.length - 1), phaseElapsedMs: 0, paused: true, completedExerciseIds: [...completed, exercise.id] };
   }
   return session;
 }
@@ -64,13 +73,18 @@ function validateCompletion(value: unknown): Completion {
   const item = object(value, 'completion'); const routine = routineFor(item.routineId);
   text(item.id, 'completion.id'); date(item.startedAt, 'startedAt'); date(item.completedAt, 'completedAt');
   if (Date.parse(item.completedAt) < Date.parse(item.startedAt)) fail('Completion precedes workout start.');
-  number(item.elapsedMs, 'elapsedMs', 0, maximumElapsedMs(routine));
+  elapsed(item.elapsedMs, maximumElapsedMs(routine));
   if (item.xp !== routine.xp) fail('Invalid completion XP.');
-  const ids = routine.exercises.map(ex => ex.id);
+  const canonicalIds = routine.exercises.map(ex => ex.id);
+  const snapshot = item.exerciseIds === undefined ? undefined : exerciseIds(item.exerciseIds, 'exerciseIds', canonicalIds);
+  if (snapshot && (!snapshot.length || snapshot.some((id, index) => index > 0 && canonicalIds.indexOf(id) <= canonicalIds.indexOf(snapshot[index - 1])))) fail('Exercise snapshot must be nonempty and in routine order.');
+  const ids = snapshot ?? canonicalIds;
+  if (snapshot) elapsed(item.elapsedMs, routine.exercises.filter(exercise => snapshot.includes(exercise.id)).reduce((sum, exercise) => sum + exercise.prepSeconds + exercise.durationSeconds, 0) * 1000);
   const skipped = exerciseIds(item.skippedExerciseIds, 'skippedExerciseIds', ids);
   const completed = exerciseIds(item.completedExerciseIds, 'completedExerciseIds', ids);
   if (skipped.some(id => completed.includes(id)) || skipped.length + completed.length !== ids.length) fail('Completion exercise progress is inconsistent.');
-  return { id: item.id, routineId: routine.id, startedAt: item.startedAt, completedAt: item.completedAt, elapsedMs: item.elapsedMs, xp: routine.xp, skippedExerciseIds: skipped, completedExerciseIds: completed };
+  if (snapshot && item.elapsedMs + ELAPSED_TOLERANCE_MS < completed.reduce((sum, id) => sum + routine.exercises.find(exercise => exercise.id === id)!.durationSeconds * 1000, 0)) fail('Elapsed time is inconsistent with completed exercise work.');
+  return { ...(snapshot ? { exerciseIds: snapshot } : {}), id: item.id, routineId: routine.id, startedAt: item.startedAt, completedAt: item.completedAt, elapsedMs: item.elapsedMs, xp: routine.xp, skippedExerciseIds: skipped, completedExerciseIds: completed };
 }
 export function validateData(value: unknown): AppData {
   const data = object(value, 'backup');
@@ -83,6 +97,16 @@ export function validateData(value: unknown): AppData {
   const illustrationStyle = settings.illustrationStyle === undefined ? 'male' : settings.illustrationStyle;
   if (illustrationStyle !== 'male' && illustrationStyle !== 'female' && illustrationStyle !== 'marker') fail('illustrationStyle must be male, female or marker.');
   const selectedRoutine = routineFor(settings.selectedRoutineId);
+  const disabledExerciseIds: Record<string, string[]> = {};
+  if (settings.disabledExerciseIds !== undefined) {
+    const disabled = object(settings.disabledExerciseIds, 'disabledExerciseIds');
+    for (const [id, values] of Object.entries(disabled)) {
+      const routine = routineFor(id);
+      const ids = exerciseIds(values, 'disabledExerciseIds', routine.exercises.map(exercise => exercise.id));
+      if (ids.length >= routine.exercises.length) fail('At least one exercise must remain enabled.');
+      disabledExerciseIds[id] = ids;
+    }
+  }
   if (!Array.isArray(data.completions) || data.completions.length > 10000) fail('Too many completion records.');
   const completions = data.completions.map(validateCompletion);
   if (new Set(completions.map(item => item.id)).size !== completions.length) fail('Duplicate completion IDs.');
@@ -90,9 +114,9 @@ export function validateData(value: unknown): AppData {
   if (session && session.phase !== 'complete' && completions.some(item => item.id === session.id)) fail('Active session has already been completed.');
   if (session?.phase === 'complete') {
     const completion = completions.find(item => item.id === session.id);
-    if (!completion || completion.routineId !== session.routineId || completion.startedAt !== session.startedAt || completion.elapsedMs !== session.elapsedMs || JSON.stringify(completion.completedExerciseIds) !== JSON.stringify(session.completedExerciseIds) || JSON.stringify(completion.skippedExerciseIds) !== JSON.stringify(session.skippedExerciseIds)) fail('Completed session has no matching completion record.');
+    if (!completion || completion.routineId !== session.routineId || completion.startedAt !== session.startedAt || completion.elapsedMs !== session.elapsedMs || JSON.stringify(completion.exerciseIds) !== JSON.stringify(session.exerciseIds) || JSON.stringify(completion.completedExerciseIds) !== JSON.stringify(session.completedExerciseIds) || JSON.stringify(completion.skippedExerciseIds) !== JSON.stringify(session.skippedExerciseIds)) fail('Completed session has no matching completion record.');
   }
-  return { format: 'tech-neck', version: 1, settings: { voiceEnabled: settings.voiceEnabled, voiceRate: settings.voiceRate, voiceGender, illustrationStyle, wakeLockEnabled: settings.wakeLockEnabled, selectedRoutineId: selectedRoutine.id }, completions, session };
+  return { format: 'tech-neck', version: 1, settings: { voiceEnabled: settings.voiceEnabled, voiceRate: Math.min(1.5, settings.voiceRate), disabledExerciseIds, voiceGender, illustrationStyle, wakeLockEnabled: settings.wakeLockEnabled, selectedRoutineId: selectedRoutine.id }, completions, session };
 }
 export function parseImport(textValue: string): AppData {
   if (new TextEncoder().encode(textValue).length > MAX_IMPORT_BYTES) fail('File exceeds the 2 MB limit.');

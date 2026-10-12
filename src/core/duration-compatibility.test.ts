@@ -8,15 +8,16 @@ import { getStats } from './stats';
 const oldRoutine = {
   ...DEFAULT_ROUTINE,
   exercises: DEFAULT_ROUTINE.exercises.map((exercise, index) => ({
-    ...exercise, durationSeconds: index === 0 ? 60 : index >= 1 && index <= 3 ? 90 : exercise.durationSeconds,
+    ...exercise, durationSeconds: [60, 90, 90, 90, 30, 50, 50][index],
   })),
 };
 const started = new Date('2026-10-07T10:00:00.000Z');
 const oldComplete = advanceSession(createSession(oldRoutine, 'old-complete', started), 600000, oldRoutine);
+delete oldComplete.exerciseIds;
 const oldRecord = completionFor(oldComplete, oldRoutine, new Date(started.getTime() + 600000));
 function oldActive(index: number, seconds: number) {
   const preceding = oldRoutine.exercises.slice(0, index).reduce((sum, exercise) => sum + exercise.prepSeconds + exercise.durationSeconds, 0);
-  return advanceSession(createSession(oldRoutine, `old-active-${index}`, started), (preceding + oldRoutine.exercises[index].prepSeconds + seconds) * 1000, oldRoutine);
+  const session = advanceSession(createSession(oldRoutine, `old-active-${index}`, started), (preceding + oldRoutine.exercises[index].prepSeconds + seconds) * 1000, oldRoutine); delete session.exerciseIds; return session;
 }
 
 test('old ten-minute completion history and its completed session survive load/import with XP and settings intact', () => {
@@ -32,8 +33,9 @@ test('old ten-minute completion history and its completed session survive load/i
   assert.throws(() => parseImport(JSON.stringify({ ...data, completions: [{ ...oldRecord, elapsedMs: 600001 }] })), /elapsedMs/);
 });
 test('the earlier8:45 routine remains valid alongside ten-minute history after chin duration changes', () => {
-  const previousRoutine = { ...DEFAULT_ROUTINE, exercises: DEFAULT_ROUTINE.exercises.map((exercise, index) => ({ ...exercise, durationSeconds: index === 0 ? 60 : exercise.durationSeconds })) };
+  const previousRoutine = { ...DEFAULT_ROUTINE, exercises: DEFAULT_ROUTINE.exercises.map((exercise, index) => ({ ...exercise, durationSeconds: [60, 65, 65, 65, 30, 50, 50][index] })) };
   const previousComplete = advanceSession(createSession(previousRoutine, 'previous-complete', started), 525000, previousRoutine);
+  delete previousComplete.exerciseIds;
   const previousRecord = completionFor(previousComplete, previousRoutine, new Date(started.getTime() + 525000));
   const data = { ...freshData(), completions: [oldRecord, previousRecord], session: previousComplete };
   assert.equal(previousRecord.elapsedMs, 525000);
@@ -61,9 +63,9 @@ test('old chin progress in the removed trailing rest advances to paused preparat
     assert.deepEqual(parseImport(JSON.stringify(loaded.data)), loaded.data);
   }
 });
-test('old arm progress below 65 seconds remains paused in place; progress at or past 65 advances to paused preparation', () => {
+test('old arm progress below 30 seconds remains paused in place; progress at or past 30 advances to paused preparation', () => {
   for (const index of [1, 2, 3]) {
-    for (const seconds of [64.999, 65, 75, 89.999]) {
+    for (const seconds of [29.999, 30, 75, 89.999]) {
       const session = oldActive(index, seconds);
       const data = { ...freshData(), completions: [oldRecord], session };
       const serialized = JSON.stringify(data);
@@ -73,7 +75,7 @@ test('old arm progress below 65 seconds remains paused in place; progress at or 
       assert.equal(restored.paused, true); assert.equal(restored.id, session.id);
       assert.equal(restored.elapsedMs, session.elapsedMs);
       assert.deepEqual(loaded.data.completions, data.completions);
-      if (seconds < 65) {
+      if (seconds < 30) {
         assert.equal(restored.phase, 'active'); assert.equal(restored.exerciseIndex, index);
         assert.equal(restored.phaseElapsedMs, session.phaseElapsedMs);
       } else {

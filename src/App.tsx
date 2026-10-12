@@ -30,11 +30,12 @@ import { completedHistory } from "./core/history";
 import { getStats } from "./core/stats";
 import { getActivityCharts } from "./core/activityCharts";
 import { getPose } from "./core/engine";
-import { PREPARATION_DEMO_STEP_MS, ROUTINES, getRoutine } from "./core/config";
+import { PREPARATION_DEMO_STEP_MS, getRoutine } from "./core/config";
 import { publicAssetUrl } from "./core/assets";
 import type { AppData } from "./core/types";
 import ExerciseArt from "./components/ExerciseArt";
 import AboutPage from "./components/AboutPage";
+import ExercisesPage from "./components/ExercisesPage";
 import ActivityCharts from "./components/ActivityCharts";
 import RoutinePicker from "./components/RoutinePicker";
 import SelectControl from "./components/SelectControl";
@@ -138,6 +139,8 @@ export default function App() {
   const [showAbout, setShowAbout] = useState(
     () => window.location.hash === "#/about",
   );
+  const [showExercises, setShowExercises] = useState(() => window.location.hash === "#/exercises");
+  const exercisesAppEntry = useRef(false);
   const aboutOrigin = useRef<{ tab: Tab; scrollY: number } | null>(null);
   const aboutAppEntry = useRef(false);
   const aboutRouteListener = useRef<() => void>(() => {});
@@ -206,7 +209,7 @@ export default function App() {
     if (!showWorkout) homeLaunchGuard.current = false;
   }, [showWorkout]);
   const activeScreen =
-    !showAbout && showWorkout && session && frame && exercise;
+    !showAbout && !showExercises && showWorkout && session && frame && exercise;
   const finishScreen = activeScreen && session.phase === "complete";
   const handsTheme = (activeScreen ? routine : selectedRoutine).id === "hands-level-1";
   const brandName = handsTheme ? "wrist fix" : "tech neck";
@@ -292,6 +295,16 @@ export default function App() {
     aboutOrigin.current = null;
     aboutAppEntry.current = false;
   };
+  const openExercises = () => {
+    exercisesAppEntry.current = true;
+    window.history.pushState(window.history.state, "", "#/exercises");
+    setShowExercises(true);
+    window.scrollTo(0, 0);
+  };
+  const backFromExercises = () => {
+    if (exercisesAppEntry.current) window.history.back();
+    else navigateToTab("settings");
+  };
   const openAbout = () => {
     if (showAbout) return;
     aboutOrigin.current = { tab, scrollY: window.scrollY };
@@ -310,6 +323,19 @@ export default function App() {
   };
   // Keep the browser listener current without re-subscribing on timer updates.
   aboutRouteListener.current = () => {
+    const nextExercises = window.location.hash === "#/exercises";
+    setShowExercises(nextExercises);
+    if (nextExercises) {
+      if (showWorkout) {
+        if (session && session.phase !== "complete") workout.pause();
+        setShowWorkout(false);
+      }
+      window.scrollTo(0, 0);
+    }
+    if (showExercises && !nextExercises) {
+      setTab("settings");
+      window.scrollTo(0, 0);
+    }
     const nextAbout = window.location.hash === "#/about";
     if (nextAbout) {
       if (!showAbout && !aboutOrigin.current)
@@ -341,6 +367,11 @@ export default function App() {
   }, []);
   const navigateToTab = (nextTab: Tab) => {
     if (showAbout) clearAboutRoute();
+    if (showExercises) {
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+      setShowExercises(false);
+      exercisesAppEntry.current = false;
+    }
     if (showWorkout) {
       if (session && session.phase !== "complete") workout.pause();
       setShowWorkout(false);
@@ -477,9 +508,9 @@ export default function App() {
     </main>
     <div className={`app-shell ${activeScreen ? "session-shell" : ""}`} data-theme={handsTheme ? "hands" : "neck"}>
       <header className="topbar">
-        {showAbout ? (
+        {showAbout || showExercises ? (
           <>
-            <button className="back-pill" onClick={backFromAbout}>
+            <button className="back-pill" onClick={showExercises ? backFromExercises : backFromAbout}>
               <ArrowLeft size={17} />
               Back
             </button>
@@ -499,7 +530,7 @@ export default function App() {
               <ArrowLeft size={17} />
               Back
             </button>
-            <span className="header-label">{isHandsRoutine ? "HANDS · LEVEL 1" : "LEVEL 1"}</span>
+            <span className="header-label">{isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
             <button
               className="top-icon"
               aria-label={
@@ -547,7 +578,9 @@ export default function App() {
           {storageError}
         </div>
       )}
-      {showAbout ? (
+      {showExercises ? (
+        <ExercisesPage settings={settings} onChange={(disabledExerciseIds) => workout.updateSettings({ disabledExerciseIds })} />
+      ) : showAbout ? (
         <AboutPage />
       ) : activeScreen ? (
         finishScreen ? (
@@ -775,7 +808,7 @@ export default function App() {
           <div className="start-area">
             <span className="start-label">{selectedIsSaved ? "CONTINUE TRAINING" : "START TRAINING"}</span>
             <RoutinePicker
-              routines={ROUTINES}
+              routines={workout.routines}
               selectedId={selectedRoutine.id}
               onChange={(id) => workout.updateSettings({ selectedRoutineId: id })}
               renderCard={(cardRoutine, disabled, selector) => (
@@ -792,9 +825,10 @@ export default function App() {
                   {selector}
                   <span className="routine-meta">
                     {cardRoutine.exercises.length} exercises <span>·</span>{" "}
-                    {cardRoutine.id === "hands-level-1"
-                      ? `${cardRoutine.exercises.reduce((sum, item) => sum + item.durationSeconds, 0) / 60} min movement`
-                      : `${formatTime(cardRoutine.exercises.reduce((sum, item) => sum + item.durationSeconds + item.prepSeconds, 0))} min`}
+                    {(() => {
+                      const seconds = cardRoutine.exercises.reduce((sum, item) => sum + item.durationSeconds, 0);
+                      return seconds % 60 === 0 ? `${seconds / 60} min movement` : `${formatTime(seconds)} movement`;
+                    })()}
                     <span>·</span> +{cardRoutine.xp} XP
                   </span>
                 </>
@@ -1064,6 +1098,10 @@ export default function App() {
               detail="While your workout is running"
             />
           </section>
+          <section className="exercises-settings-section">
+            <h2><a className="exercises-settings-link" href="#/exercises" onClick={(event) => { event.preventDefault(); openExercises(); }}>Exercises</a></h2>
+            <p className="exercises-settings-description">Choose the movements in each routine.</p>
+          </section>
           <section className="illustration-section">
             <h2>Illustrations</h2>
             <p>Choose the look of your exercise guide.</p>
@@ -1144,15 +1182,15 @@ export default function App() {
             aria-hidden="true"
             style={{
               transform: `translateX(${activeScreen || tab === "train" ? 0 : tab === "activity" ? 100 : 200}%)`,
-              opacity: showAbout ? 0 : 1,
+              opacity: showAbout || showExercises ? 0 : 1,
             }}
           />
           <button
             className={
-              !showAbout && (activeScreen || tab === "train") ? "selected" : ""
+              !showAbout && !showExercises && (activeScreen || tab === "train") ? "selected" : ""
             }
             aria-current={
-              !showAbout && (activeScreen || tab === "train")
+              !showAbout && !showExercises && (activeScreen || tab === "train")
                 ? "page"
                 : undefined
             }
@@ -1162,9 +1200,9 @@ export default function App() {
             <span>Train</span>
           </button>
           <button
-            className={!showAbout && tab === "activity" ? "selected" : ""}
+            className={!showAbout && !showExercises && tab === "activity" ? "selected" : ""}
             aria-current={
-              !showAbout && !activeScreen && tab === "activity"
+              !showAbout && !showExercises && !activeScreen && tab === "activity"
                 ? "page"
                 : undefined
             }
@@ -1174,9 +1212,9 @@ export default function App() {
             <span>Activity</span>
           </button>
           <button
-            className={!showAbout && tab === "settings" ? "selected" : ""}
+            className={!showAbout && !showExercises && tab === "settings" ? "selected" : ""}
             aria-current={
-              !showAbout && !activeScreen && tab === "settings"
+              !showAbout && !showExercises && !activeScreen && tab === "settings"
                 ? "page"
                 : undefined
             }

@@ -149,6 +149,43 @@ const STYLE_POSES: Record<IllustrationStyle, Record<string, PoseArt>> = {
   marker: MARKER_POSES,
 };
 
+// Level-two frames are individual native-resolution crops from one atlas.
+// Body registration is expressed by CSS transforms; source pixels stay intact.
+for (const [style, poses] of Object.entries(STYLE_POSES)) {
+  for (const state of ["left", "center", "right"]) {
+    poses[`head-turn-${state}`] = {
+      sheet: `neck-level2/${style}/head-turn-${state}`,
+      x: 0, width: 512, height: 700 * 512 / 418, sheetWidth: 512,
+    };
+  }
+  poses["head-turn-right"] = { ...poses["head-turn-left"], mirror: true };
+  for (const direction of ["front", "back"]) {
+    for (const phase of [1, 2, 3]) {
+      poses[`arm-circles-${direction}-${phase}`] = {
+        sheet: `neck-level2/${style}/arm-circle-${phase}`,
+        x: 0, width: 512, height: 554 * 512 / 418, sheetWidth: 512,
+      };
+    }
+    poses[`arm-circles-${direction}`] = poses[`arm-circles-${direction}-1`];
+  }
+  // Measured torso centers on the three native 418px arm cells. Translate
+  // the fixed trunk only; the artwork pixels and character scale stay intact.
+  const offsets = { male: [0, 4, 9], female: [0, 1.5, 7], marker: [0, 2, 9] }[style as IllustrationStyle];
+  for (const direction of ["front", "back"]) {
+    for (const phase of [1, 2, 3]) {
+      poses[`arm-circles-${direction}-${phase}`].alignment = {
+        scale: 1, x: offsets[phase - 1] * 512 / 418, y: 0, stageWidth: 512,
+      };
+    }
+  }
+  // Register the front-facing torso to the turned view; the mirrored turn
+  // already shares the same center and framing as its source.
+  const headOffsets = { male: [-5.5, 2], female: [-13.5, 1.5], marker: [-1.5, 0] }[style as IllustrationStyle];
+  for (const state of ["left", "center", "right"]) {
+    poses[`head-turn-${state}`].alignment = { scale: 1, x: headOffsets[state === "center" ? 1 : 0] * 512 / 418, y: 0, stageWidth: 512 };
+  }
+}
+
 interface MovementArrow {
   path: string;
   head: string;
@@ -247,6 +284,32 @@ const MOVEMENTS: Record<string, Movement> = {
   },
 };
 
+// Head turns use a short horizontal curve, never a rotation ring around the head.
+MOVEMENTS["head-turn-left"] = {
+  label: "Gently turn your head to your left. Keep your shoulders still.",
+  arrows: [{ path: "M212 155Q256 174 300 155", head: "M320 149L298 145L304 165Z" }],
+};
+MOVEMENTS["head-turn-right"] = {
+  label: "Gently turn your head to your right. Keep your shoulders still.",
+  arrows: [{ path: "M300 155Q256 174 212 155", head: "M192 149L208 165L214 145Z" }],
+};
+MOVEMENTS["head-turn-center"] = { label: "Return your head to center.", arrows: [] };
+for (const direction of ["front", "back"]) {
+  const forward = direction === "front";
+  const movement = {
+    label: `Make small controlled arm circles ${forward ? "forward" : "backward"}. Keep your arms at shoulder height.`,
+    arrows: [80, 432].map((x) => forward ? {
+      path: `M${x - 20} 220A27 27 0 1 1 ${x + 24} 235`,
+      head: `M${x + 13} 250L${x + 14} 225L${x + 33} 239Z`,
+    } : {
+      path: `M${x + 20} 220A27 27 0 1 0 ${x - 24} 235`,
+      head: `M${x - 13} 250L${x - 33} 239L${x - 14} 225Z`,
+    }),
+  };
+  MOVEMENTS[`arm-circles-${direction}`] = movement;
+  for (const phase of [1, 2, 3]) MOVEMENTS[`arm-circles-${direction}-${phase}`] = movement;
+}
+
 export default function ExerciseArt({
   poseId,
   title,
@@ -342,7 +405,7 @@ export default function ExerciseArt({
             aria-hidden="true"
           >
             <g transform={art.arrowTransform}>
-              {movement.arrows.map((arrow, index) => (
+              {(poseId === "head-turn-right" && art.mirror ? MOVEMENTS["head-turn-left"].arrows : movement.arrows).map((arrow, index) => (
                 <g key={index}>
                   {/* Both outline parts sit behind the entire cyan silhouette. */}
                   <path

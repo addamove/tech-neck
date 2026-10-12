@@ -5,7 +5,7 @@ export { HANDS_ROUTINE, HANDS_TIMING } from './handsRoutine';
 export const PREPARATION_DEMO_STEP_MS = 3000;
 
 // Every duration, pose interval and voice deadline is declared here, in seconds.
-export const ARM_TIMING = { up: 3, down: 3, duration: 65, breathingReminderAtSeconds: 15, chinReminderCycles: [2, 7, 12] };
+export const ARM_TIMING = { up: 3, down: 3, duration: 30, breathingReminderAtSeconds: 15, chinReminderCycles: [2, 7, 12] };
 export const BREATHING_GUIDANCE = 'Inhale while lifting up. Exhale while moving down.';
 // Voice guidance is independent of the repeating visual movement cycle.
 const armsCues: VoiceCue[] = [
@@ -80,17 +80,62 @@ const exercises: Exercise[] = [
     cues: sideNeckCues,
   },
   {
-    id: 'chest', title: 'Stretch your chest muscles', durationSeconds: 50, prepSeconds: 20, prepPoseId: 'chest-left',
+    id: 'chest', title: 'Stretch your chest muscles', durationSeconds: 72, prepSeconds: 20, prepPoseId: 'chest-left',
     description: 'Walk into an open doorway. Place your arm against the side of the door with your palm facing the door. Take a small step forward with your foot. Keep your forearm touching the door.',
-    poses: [{ poseId: 'chest-left', seconds: 25, label: 'Left side' }, { poseId: 'chest-right', seconds: 25, label: 'Right side' }],
-    cues: [{ atSeconds: 0, text: 'Start on your left side.' }, { atSeconds: 25, text: 'Switch to your right side.' }],
+    poses: [{ poseId: 'chest-left', seconds: 36, label: 'Left side' }, { poseId: 'chest-right', seconds: 36, label: 'Right side' }],
+    cues: [{ atSeconds: 0, text: 'Start on your left side.' }, { atSeconds: 36, text: 'Switch to your right side.' }],
   },
 ];
-export const ROUTINES: Routine[] = [{ id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }, HANDS_ROUTINE];
+function longerSideNeck(): Pick<Exercise, 'poses' | 'cues'> {
+  const poses: PoseStep[] = [];
+  for (const side of ['left', 'right']) for (let at = 0; at < 34;) {
+    const rest = at % 9 >= 7;
+    const seconds = Math.min(rest ? 9 - at % 9 : 7 - at % 9, 34 - at);
+    poses.push({ poseId: `side-neck-${side}`, seconds, isRest: rest, label: rest ? 'Rest for two seconds' : `${side === 'left' ? 'Left' : 'Right'} side` }); at += seconds;
+  }
+  let at = 0;
+  const cues = poses.map((pose, index) => {
+    const cue = { atSeconds: at, text: index === 0 ? 'Start on your left side. Allow the weight of your arm to provide a gentle stretch. Do not press down.' : at === 34 ? 'Switch to your right side.' : pose.isRest ? 'Rest for two seconds.' : 'Gently return to the stretch.' };
+    at += pose.seconds; return cue;
+  });
+  return { poses, cues };
+}
+const level2Durations: Record<string, number> = { 'chin-tuck': 82, 'back-neck': 58, 'side-neck': 68, chest: 62 };
+export const LEVEL_2_ROUTINE: Routine = {
+  id: 'level-2', title: 'Tech Neck · Level 2', subtitle: '9 exercises for your neck and shoulders', xp: 10,
+  exercises: [...exercises.map(exercise => ({ ...exercise, durationSeconds: level2Durations[exercise.id] ?? exercise.durationSeconds,
+    ...(exercise.id === 'side-neck' ? longerSideNeck() : {}),
+    ...(exercise.id === 'chest' ? { poses: [{ poseId: 'chest-left', seconds: 31, label: 'Left side' }, { poseId: 'chest-right', seconds: 31, label: 'Right side' }], cues: [{ atSeconds: 0, text: 'Start on your left side.' }, { atSeconds: 31, text: 'Switch to your right side.' }] } : {}),
+  })), {
+    id: 'arm-circles', title: 'Gentle arm circles', durationSeconds: 30, prepSeconds: 20, prepPoseId: 'arm-circles-front',
+    description: 'Stand tall with your chin gently tucked. Extend your arms comfortably to the sides. Make small, slow circles forward for fifteen seconds, then backward for fifteen seconds. Keep your shoulders relaxed.',
+    poses: ['front', 'back'].flatMap(direction => Array.from({ length: 15 }, (_, index) => ({ poseId: `arm-circles-${direction}-${direction === 'front' ? index % 3 + 1 : [1, 3, 2][index % 3]}`, seconds: 1, label: `Small ${direction === 'front' ? 'forward' : 'backward'} circles` }))),
+    cues: [{ atSeconds: 0, text: 'Make small, slow circles forward.' }, { atSeconds: 15, text: 'Change direction. Make small, slow circles backward.' }],
+  }, {
+    id: 'head-turns', title: 'Gentle head turns', durationSeconds: 30, prepSeconds: 20, prepPoseId: 'head-turn-center',
+    description: 'Sit or stand tall with your shoulders relaxed. Slowly turn your head to the left, return to center, then turn to the right. Stay within a comfortable range and move without force.',
+    poses: [{ poseId: 'head-turn-left', seconds: 4, label: 'Slowly turn left' }, { poseId: 'head-turn-center', seconds: 1, label: 'Return to center' }, { poseId: 'head-turn-right', seconds: 4, label: 'Slowly turn right' }, { poseId: 'head-turn-center', seconds: 1, label: 'Return to center' }],
+    cues: [{ atSeconds: 0, text: 'Turn slowly within a comfortable range, without force.' }, { atSeconds: 15, text: 'Keep your shoulders relaxed and move without force.' }],
+  }],
+};
+export const ROUTINES: Routine[] = [{ id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }, LEVEL_2_ROUTINE, HANDS_ROUTINE];
 export const DEFAULT_ROUTINE = ROUTINES[0];
 export const DEFAULT_DATA: AppData = {
   format: 'tech-neck', version: 1,
-  settings: { voiceEnabled: true, voiceRate: 1, voiceGender: 'female', illustrationStyle: 'male', wakeLockEnabled: true, selectedRoutineId: DEFAULT_ROUTINE.id },
+  settings: { voiceEnabled: true, voiceRate: 1, voiceGender: 'female', illustrationStyle: 'male', wakeLockEnabled: true, selectedRoutineId: DEFAULT_ROUTINE.id, disabledExerciseIds: {} },
   completions: [], session: null,
 };
 export const getRoutine = (id: string) => ROUTINES.find(r => r.id === id) ?? DEFAULT_ROUTINE;
+
+export function selectRoutineExercises(routine: Routine, disabledIds: string[] = []): Routine {
+  const selected = routine.exercises.filter(exercise => !disabledIds.includes(exercise.id));
+  return { ...routine, exercises: selected.length ? selected : [routine.exercises[0]] };
+}
+export function getSelectedRoutine(routineId: string, settings: Pick<import('./types').Settings, 'disabledExerciseIds'>): Routine {
+  const routine = getRoutine(routineId);
+  return selectRoutineExercises(routine, settings.disabledExerciseIds?.[routine.id]);
+}
+export function getSessionRoutine(session: import('./types').Session): Routine {
+  const routine = getRoutine(session.routineId);
+  return session.exerciseIds ? { ...routine, exercises: session.exerciseIds.map(id => routine.exercises.find(exercise => exercise.id === id)!).filter(Boolean) } : routine;
+}

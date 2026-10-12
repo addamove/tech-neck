@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getRoutine } from './config';
+import { ROUTINES, getRoutine, getSelectedRoutine, getSessionRoutine } from './config';
 import { advanceSession, completionFor, createSession, getFrame, recordCompletion, skipExercise, skipPreparation } from './engine';
 import { freshData, loadData, readImport, saveData } from './persistence';
 import { getStats } from './stats';
@@ -29,8 +29,8 @@ export function useWorkout(options: { routineId?: string } = {}) {
   const speechPhase = useRef('');
   const cueElapsed = useRef(-1);
   const timerMark = useRef(0);
-  const selectedRoutine = getRoutine(options.routineId ?? data.settings.selectedRoutineId);
-  const routine = data.session ? getRoutine(data.session.routineId) : selectedRoutine;
+  const selectedRoutine = getSelectedRoutine(options.routineId ?? data.settings.selectedRoutineId, data.settings);
+  const routine = data.session ? getSessionRoutine(data.session) : selectedRoutine;
   const session = data.session;
   const exercise = routine.exercises[session?.exerciseIndex ?? 0];
   const running = Boolean(session && !session.paused && session.phase !== 'complete');
@@ -45,12 +45,12 @@ export function useWorkout(options: { routineId?: string } = {}) {
     return () => { speaker.dispose(); speakerRef.current = null; };
   }, []);
   const withSession = useCallback((previous: AppData, nextSession: Session | null): AppData => {
-    return { ...previous, session: nextSession, completions: nextSession?.phase === 'complete' ? recordCompletion(previous.completions, completionFor(nextSession, getRoutine(nextSession.routineId))) : previous.completions };
+    return { ...previous, session: nextSession, completions: nextSession?.phase === 'complete' ? recordCompletion(previous.completions, completionFor(nextSession, getSessionRoutine(nextSession))) : previous.completions };
   }, []);
   const flush = useCallback(() => {
     const now = performance.now();
     const delta = Math.max(0, now - timerMark.current); timerMark.current = now;
-    setData(previous => previous.session && !previous.session.paused ? withSession(previous, advanceSession(previous.session, delta, getRoutine(previous.session.routineId))) : previous);
+    setData(previous => previous.session && !previous.session.paused ? withSession(previous, advanceSession(previous.session, delta, getSessionRoutine(previous.session))) : previous);
   }, [withSession]);
   const pause = useCallback(() => {
     if (timerMark.current) flush();
@@ -68,7 +68,7 @@ export function useWorkout(options: { routineId?: string } = {}) {
   }, [running, flush, pause]);
 
   const speakPreparation = useCallback((nextSession: Session, settings: Settings) => {
-    const nextExercise = getRoutine(nextSession.routineId).exercises[nextSession.exerciseIndex];
+    const nextExercise = getSessionRoutine(nextSession).exercises[nextSession.exerciseIndex];
     speechPhase.current = `${nextSession.id}:${nextSession.exerciseIndex}:prep`;
     cueElapsed.current = -1;
     speakerRef.current?.cancel();
@@ -119,7 +119,7 @@ export function useWorkout(options: { routineId?: string } = {}) {
 
   const start = useCallback((routineId?: string) => {
     const current = dataRef.current;
-    const selected = getRoutine(routineId ?? options.routineId ?? current.settings.selectedRoutineId);
+    const selected = getSelectedRoutine(routineId ?? options.routineId ?? current.settings.selectedRoutineId, current.settings);
     const id = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const nextSession = createSession(selected, id);
     timerMark.current = performance.now();
@@ -142,7 +142,7 @@ export function useWorkout(options: { routineId?: string } = {}) {
   }, [speakPreparation]);
   const next = useCallback(() => {
     speakerRef.current?.cancel();
-    setData(previous => previous.session ? withSession(previous, skipExercise(previous.session, getRoutine(previous.session.routineId))) : previous);
+    setData(previous => previous.session ? withSession(previous, skipExercise(previous.session, getSessionRoutine(previous.session))) : previous);
     timerMark.current = performance.now();
   }, [withSession]);
   const skipPrep = useCallback(() => {
@@ -164,7 +164,25 @@ export function useWorkout(options: { routineId?: string } = {}) {
         cueElapsed.current = session.phaseElapsedMs / 1000;
       } else speechPhase.current = '';
     }
-    setData(previous => ({ ...previous, settings: { ...previous.settings, ...settings, voiceRate: Math.max(0.5, Math.min(2, settings.voiceRate !== undefined && Number.isFinite(settings.voiceRate) ? settings.voiceRate : previous.settings.voiceRate)), selectedRoutineId: getRoutine(settings.selectedRoutineId ?? previous.settings.selectedRoutineId).id } }));
+    if (settings.disabledExerciseIds) {
+      const normalized: Record<string, string[]> = {};
+      for (const canonical of ROUTINES) {
+        const proposed = settings.disabledExerciseIds[canonical.id] ?? [];
+        const disabled = canonical.exercises.filter(exercise => proposed.includes(exercise.id)).map(exercise => exercise.id);
+        normalized[canonical.id] = disabled.length < canonical.exercises.length ? disabled : (dataRef.current.settings.disabledExerciseIds[canonical.id] ?? []);
+      }
+      settings = { ...settings, disabledExerciseIds: normalized };
+    }
+    setData(previous => ({ ...previous, settings: { ...previous.settings, ...settings, voiceRate: Math.max(0.5, Math.min(1.5, settings.voiceRate !== undefined && Number.isFinite(settings.voiceRate) ? settings.voiceRate : previous.settings.voiceRate)), selectedRoutineId: getRoutine(settings.selectedRoutineId ?? previous.settings.selectedRoutineId).id } }));
+  }, []);
+  const setExerciseEnabled = useCallback((routineId: string, exerciseId: string, enabled: boolean): boolean => {
+    const canonical = getRoutine(routineId);
+    if (canonical.id !== routineId || !canonical.exercises.some(exercise => exercise.id === exerciseId)) return false;
+    const current = dataRef.current.settings.disabledExerciseIds[routineId] ?? [];
+    const disabled = enabled ? current.filter(id => id !== exerciseId) : [...new Set([...current, exerciseId])];
+    if (disabled.length >= canonical.exercises.length) return false;
+    setData(previous => ({ ...previous, settings: { ...previous.settings, disabledExerciseIds: { ...previous.settings.disabledExerciseIds, [routineId]: disabled } } }));
+    return true;
   }, []);
   const previewVoice = useCallback((gender?: VoiceGender) => {
     const settings = dataRef.current.settings;
@@ -186,5 +204,5 @@ export function useWorkout(options: { routineId?: string } = {}) {
   const frame = useMemo(() => getFrame(session, routine), [session, routine]);
   const stats = useMemo(() => getStats(data.completions), [data.completions, calendarClock]);
   const achievements = useMemo(() => getAchievements(data.completions), [data.completions, calendarClock]);
-  return { data, session, routine, selectedRoutine, exercise, frame, settings: data.settings, stats, achievements, storageError, speechStatus, wakeLockStatus, start, pause, resume, next, skipPreparation: skipPrep, stop, updateSettings, previewVoice, exportData, importData, resetStats };
+  return { data, session, routine, selectedRoutine, routines: ROUTINES.map(item => getSelectedRoutine(item.id, data.settings)), exercise, frame, settings: data.settings, stats, achievements, storageError, speechStatus, wakeLockStatus, start, pause, resume, next, skipPreparation: skipPrep, stop, updateSettings, setExerciseEnabled, previewVoice, exportData, importData, resetStats };
 }

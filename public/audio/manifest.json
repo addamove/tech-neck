@@ -134,5 +134,29 @@
   "Rest your forearms on the table, palms down. Gently move your hands toward your thumbs, then toward your little fingers.": {
     "src": "/audio/7ec34779859dd853.mp3",
     "duration": 6.782458
+  },
+  "Change direction. Make small, slow circles backward.": {
+    "src": "/audio/f634823d84cbfb2c.mp3",
+    "duration": 3.821833
+  },
+  "Make small, slow circles forward.": {
+    "src": "/audio/94187d9ea18e35a4.mp3",
+    "duration": 1.912667
+  },
+  "Turn slowly within a comfortable range, without force.": {
+    "src": "/audio/a0f9de4dee1ad612.mp3",
+    "duration": 2.864167
+  },
+  "Sit or stand tall with your shoulders relaxed. Slowly turn your head to the left, return to center, then turn to the right. Stay within a comfortable range and move without force.": {
+    "src": "/audio/8060ee67ecfbf8bf.mp3",
+    "duration": 10.523042
+  },
+  "Stand tall with your chin gently tucked. Extend your arms comfortably to the sides. Make small, slow circles forward for fifteen seconds, then backward for fifteen seconds. Keep your shoulders relaxed.": {
+    "src": "/audio/415555a635c63251.mp3",
+    "duration": 13.094958
+  },
+  "Keep your shoulders relaxed and move without force.": {
+    "src": "/audio/b050346615166964.mp3",
+    "duration": 2.433958
   }
 }

@@ -1,7 +1,12 @@
 import type { Completion, Exercise, Routine, Session, VoiceCue, WorkoutFrame } from './types';
 
+function sessionRoutine(session: Session | null, routine: Routine): Routine {
+  return session?.exerciseIds ? { ...routine, exercises: session.exerciseIds.map(id => routine.exercises.find(exercise => exercise.id === id)!).filter(Boolean) } : routine;
+}
+
 export function createSession(routine: Routine, id: string, now = new Date()): Session {
-  return { id, routineId: routine.id, startedAt: now.toISOString(), phase: 'prep', exerciseIndex: 0, phaseElapsedMs: 0, elapsedMs: 0, paused: false, skippedExerciseIds: [], completedExerciseIds: [] };
+  if (!routine.exercises.length) throw new Error('A workout must include at least one exercise.');
+  return { exerciseIds: routine.exercises.map(exercise => exercise.id), id, routineId: routine.id, startedAt: now.toISOString(), phase: 'prep', exerciseIndex: 0, phaseElapsedMs: 0, elapsedMs: 0, paused: false, skippedExerciseIds: [], completedExerciseIds: [] };
 }
 function nextExercise(session: Session, routine: Routine): Session {
   return session.exerciseIndex + 1 >= routine.exercises.length
@@ -9,6 +14,7 @@ function nextExercise(session: Session, routine: Routine): Session {
     : { ...session, exerciseIndex: session.exerciseIndex + 1, phase: 'prep', phaseElapsedMs: 0 };
 }
 export function advanceSession(session: Session, deltaMs: number, routine: Routine): Session {
+  routine = sessionRoutine(session, routine);
   if (session.paused || session.phase === 'complete' || !Number.isFinite(deltaMs) || deltaMs <= 0) return session;
   let result = { ...session };
   let remaining = deltaMs;
@@ -27,6 +33,7 @@ export function advanceSession(session: Session, deltaMs: number, routine: Routi
   return result;
 }
 export function skipExercise(session: Session, routine: Routine): Session {
+  routine = sessionRoutine(session, routine);
   if (session.phase === 'complete') return session;
   const exercise = routine.exercises[session.exerciseIndex];
   return nextExercise({ ...session, skippedExerciseIds: [...session.skippedExerciseIds, exercise.id] }, routine);
@@ -44,6 +51,7 @@ export function getPose(exercise: Exercise, seconds: number) {
   return exercise.poses[0];
 }
 export function getFrame(session: Session | null, routine: Routine): WorkoutFrame {
+  routine = sessionRoutine(session, routine);
   const exercise = routine.exercises[session?.exerciseIndex ?? 0];
   const phase = session?.phase ?? 'prep';
   const elapsed = (session?.phaseElapsedMs ?? 0) / 1000;
@@ -65,7 +73,10 @@ export function cueTimeline(exercise: Exercise): (VoiceCue & { atSeconds: number
 export function completionFor(session: Session, routine: Routine, now = new Date()): Completion {
   if (session.phase !== 'complete') throw new Error('Only a completed workout can earn XP.');
   if (session.routineId !== routine.id) throw new Error('Workout routine does not match the completed session.');
-  return { id: session.id, routineId: session.routineId, startedAt: session.startedAt, completedAt: now.toISOString(), elapsedMs: session.elapsedMs, xp: routine.xp, skippedExerciseIds: session.skippedExerciseIds, completedExerciseIds: session.completedExerciseIds };
+  const ids = session.exerciseIds ?? routine.exercises.map(exercise => exercise.id);
+  const progressed = [...session.completedExerciseIds, ...session.skippedExerciseIds];
+  if (!ids.length || new Set(ids).size !== ids.length || ids.some(id => !routine.exercises.some(exercise => exercise.id === id)) || progressed.length !== ids.length || new Set(progressed).size !== ids.length || progressed.some(id => !ids.includes(id))) throw new Error('Completed workout exercise progress is inconsistent.');
+  return { ...(session.exerciseIds ? { exerciseIds: [...session.exerciseIds] } : {}), id: session.id, routineId: session.routineId, startedAt: session.startedAt, completedAt: now.toISOString(), elapsedMs: session.elapsedMs, xp: routine.xp, skippedExerciseIds: session.skippedExerciseIds, completedExerciseIds: session.completedExerciseIds };
 }
 export function recordCompletion(records: Completion[], completion: Completion): Completion[] {
   return records.some(record => record.id === completion.id) ? records : [...records, completion];

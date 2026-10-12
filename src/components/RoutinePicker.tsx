@@ -145,6 +145,9 @@ export default function RoutinePicker({ routines, selectedId, onChange, renderCa
             if (wasDragging) { suppressClick.current = true; slide(0); }
           }}
           onLostPointerCapture={(event) => {
+            // Implicit capture on a touched child is released when the viewport
+            // takes capture. Its bubbling event must not cancel our swipe.
+            if (event.target !== event.currentTarget) return;
             setPressed(false);
             if (gesture.current?.id !== event.pointerId || gesture.current.axis !== 'horizontal') return;
             gesture.current = null;

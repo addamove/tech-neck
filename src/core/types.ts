@@ -7,14 +7,16 @@ export interface Exercise {
 export interface Routine { id: string; title: string; subtitle: string; xp: number; exercises: Exercise[] }
 export type VoiceGender = 'female' | 'male';
 export type IllustrationStyle = 'male' | 'female' | 'marker';
-export interface Settings { voiceEnabled: boolean; voiceRate: number; voiceGender: VoiceGender; illustrationStyle: IllustrationStyle; wakeLockEnabled: boolean; selectedRoutineId: string }
+export interface Settings { voiceEnabled: boolean; voiceRate: number; voiceGender: VoiceGender; illustrationStyle: IllustrationStyle; wakeLockEnabled: boolean; selectedRoutineId: string; disabledExerciseIds: Record<string, string[]> }
 export type Phase = 'prep' | 'active' | 'complete';
 export interface Session {
+  exerciseIds?: string[];
   id: string; routineId: string; startedAt: string; phase: Phase; exerciseIndex: number;
   phaseElapsedMs: number; elapsedMs: number; paused: boolean;
   skippedExerciseIds: string[]; completedExerciseIds: string[];
 }
 export interface Completion {
+  exerciseIds?: string[];
   id: string; routineId: string; startedAt: string; completedAt: string; elapsedMs: number; xp: number;
   skippedExerciseIds: string[]; completedExerciseIds: string[];
 }

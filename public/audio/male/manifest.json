@@ -134,5 +134,29 @@
   "Keep your forearms still. Use a comfortable range.": {
     "src": "/audio/male/8be63726e141df7d.mp3",
     "duration": 2.619375
+  },
+  "Stand tall with your chin gently tucked. Extend your arms comfortably to the sides. Make small, slow circles forward for fifteen seconds, then backward for fifteen seconds. Keep your shoulders relaxed.": {
+    "src": "/audio/male/50fc0bb8127565eb.mp3",
+    "duration": 12.290667
+  },
+  "Make small, slow circles forward.": {
+    "src": "/audio/male/bc632fb5a67ccf66.mp3",
+    "duration": 1.916875
+  },
+  "Change direction. Make small, slow circles backward.": {
+    "src": "/audio/male/a72abc5aefb3aa67.mp3",
+    "duration": 3.074625
+  },
+  "Sit or stand tall with your shoulders relaxed. Slowly turn your head to the left, return to center, then turn to the right. Stay within a comfortable range and move without force.": {
+    "src": "/audio/male/b31c031a2580aa9a.mp3",
+    "duration": 10.417958
+  },
+  "Turn slowly within a comfortable range, without force.": {
+    "src": "/audio/male/51a9db41a389fbb5.mp3",
+    "duration": 3.145958
+  },
+  "Keep your shoulders relaxed and move without force.": {
+    "src": "/audio/male/f8bae023f62a2d35.mp3",
+    "duration": 2.833958
   }
 }

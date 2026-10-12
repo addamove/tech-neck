@@ -56,10 +56,12 @@ async def generate(args):
     execute('npx', 'tsx', 'scripts/generate-audio.ts', '--inputs-only', str(inputs_path))
     inputs = json.loads(inputs_path.read_text())
     hands_texts = {item['text'] for item in inputs if 'hands-level-1' in item.get('routineIds', []) and item['text'] not in COUNTDOWN_TEXTS}
-    selected_texts = COUNTDOWN_TEXTS if args.countdown_only else CHIN_TIP_TEXTS if args.chin_tips_only else hands_texts if args.hands_only else None
+    existing_manifest_path = target / 'manifest.json'
+    existing_manifest = json.loads(existing_manifest_path.read_text()) if existing_manifest_path.exists() else {}
+    selected_texts = set(args.text) if args.text else {item['text'] for item in inputs if item['text'] not in existing_manifest} if args.missing_only else COUNTDOWN_TEXTS if args.countdown_only else CHIN_TIP_TEXTS if args.chin_tips_only else hands_texts if args.hands_only else None
     if args.hands_only and not hands_texts:
         raise RuntimeError('Hands input catalog is missing; existing audio preserved.')
-    if selected_texts:
+    if selected_texts is not None:
         inputs = [item for item in inputs if item['text'] in selected_texts]
         if {item['text'] for item in inputs} != selected_texts:
             raise RuntimeError('Selected input catalog is incomplete; existing audio preserved.')
@@ -67,9 +69,9 @@ async def generate(args):
     staging.mkdir()
     raw_directory = work / f'neural-raw-{args.gender}'
     raw_directory.mkdir(exist_ok=True)
-    semaphore = asyncio.Semaphore(3)
+    semaphore = asyncio.Semaphore(1 if args.missing_only else 3)
     manifest_path = target / 'manifest.json'
-    manifest = json.loads(manifest_path.read_text()) if selected_texts and manifest_path.exists() else {}
+    manifest = json.loads(manifest_path.read_text()) if selected_texts is not None and manifest_path.exists() else {}
     generated = set()
     url_directory = '/' + target.relative_to(public).as_posix()
 
@@ -79,17 +81,21 @@ async def generate(args):
             name = hashlib.sha256(f"{voice}\n{args.rate}\n{text}".encode()).hexdigest()[:16]
             raw = raw_directory / f'{name}.mp3'
             output = staging / f'{name}.mp3'
-            if not (args.reuse_raw and raw.exists()):
+            if not (args.reuse_raw and raw.exists() and raw.stat().st_size > 0):
                 for attempt in range(3):
                     try:
                         communication = edge_tts.Communicate(text, voice, rate=args.rate)
-                        await asyncio.wait_for(communication.save(str(raw)), timeout=90)
+                        pending_raw = raw.with_suffix('.pending.mp3')
+                        await asyncio.wait_for(communication.save(str(pending_raw)), timeout=90)
+                        if duration(pending_raw) <= 0:
+                            raise RuntimeError('Empty neural audio.')
+                        os.replace(pending_raw, raw)
                         break
                     except Exception:
                         if attempt == 2:
                             raise
                         await asyncio.sleep(2 ** attempt)
-            if text in TRIMMED_TEXTS or text in hands_texts:
+            if text in TRIMMED_TEXTS or text in hands_texts or args.missing_only:
                 # Retain a small natural margin around the word. Reverse the
                 # signal to trim only trailing silence, including quiet endings.
                 trimmed = staging / f'{name}.wav'
@@ -101,7 +107,7 @@ async def generate(args):
                 source = raw
             original_duration = duration(source)
             acceleration = max(1.0, original_duration / max(0.5, maximum - 0.10))
-            if (text in TRIMMED_TEXTS or text in hands_texts) and acceleration > 1.5:
+            if acceleration > 1.5:
                 raise RuntimeError(f'Audio would exceed natural 1.5x speed: {text!r}; current public audio preserved.')
             filters = []
             while acceleration > 2:
@@ -157,6 +163,8 @@ if __name__ == '__main__':
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--countdown-only', action='store_true', help='Add only Three/Two/One/Start clips; preserve other entries and recordings.')
     selection.add_argument('--chin-tips-only', action='store_true', help='Add only the two chin coaching tips; preserve other entries and recordings.')
+    selection.add_argument('--text', action='append', help='Regenerate only an exact text; preserves other clips.')
+    selection.add_argument('--missing-only', action='store_true', help='Generate only missing texts, preserving all prior clips.')
     selection.add_argument('--hands-only', action='store_true', help='Add only hands guidance; preserve existing instructions, cues and recordings.')
     parser.add_argument('--reuse-raw', action='store_true', help='Reuse matching voice/rate/text recordings in ignored work instead of synthesizing them again.')
     asyncio.run(generate(parser.parse_args()))
