@@ -15,11 +15,16 @@ test('locked charts explain the 100 XP requirement without rendering plots', () 
 
 test('earned XP renders an accessible cumulative plot and day-by-day values', () => {
   const completion: Completion = { id: 'first', routineId: 'eye-gym', startedAt: '2026-10-12T11:00:00.000Z', completedAt: '2026-10-12T12:00:00.000Z', elapsedMs: 240000, xp: 5, skippedExerciseIds: [], completedExerciseIds: ['eye-blinks', 'eye-distance', 'eye-circles', 'eye-palming'] };
-  const html = renderToStaticMarkup(createElement(ActivityCharts, { data: getActivityCharts([completion], new Date('2026-10-13T12:00:00.000Z')) }));
+  const now = new Date('2026-10-13T12:00:00.000Z');
+  const first = getActivityCharts([completion], now);
+  assert.equal(first.totalXp, 35);
+  assert.equal(first.eligible, false);
+  const records = [completion, { ...completion, id: 'second', completedAt: '2026-10-12T13:00:00.000Z' }, { ...completion, id: 'third', completedAt: '2026-10-12T14:00:00.000Z' }];
+  const html = renderToStaticMarkup(createElement(ActivityCharts, { data: getActivityCharts(records, now) }));
   assert.match(html, /Cumulative XP over time/);
-  assert.match(html, /105 XP total/);
+  assert.match(html, /145 XP total/);
   assert.match(html, /View XP by day/);
-  assert.match(html, /\+105/);
+  assert.match(html, /\+145/);
   assert.match(html, /Flat sections represent days without new XP/);
   assert.doesNotMatch(html, /NaN|Infinity/);
 });

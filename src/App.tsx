@@ -30,6 +30,7 @@ import { useWorkout } from "./core/useWorkout";
 import { readImport } from "./core/persistence";
 import { completedHistory } from "./core/history";
 import { getStats } from "./core/stats";
+import { achievementXp } from "./core/achievements";
 import { getActivityCharts } from "./core/activityCharts";
 import { getPose } from "./core/engine";
 import { PREPARATION_DEMO_STEP_MS, getRoutine } from "./core/config";
@@ -1018,7 +1019,7 @@ export default function App() {
               ))}
             </div>
             <small className="achievement-note">
-              Tech Neck earns 10 XP; Hands and Eye Gym earn 5 XP. Each milestone earns 100 XP once.
+              Tech Neck earns 10 XP; Hands and Eye Gym earn 5 XP. First Step earns 30 XP once; each other milestone earns 100 XP once.
             </small>
           </section>
         </main>
@@ -1316,7 +1317,7 @@ export default function App() {
               {selectedAchievement.progress}/{selectedAchievement.target}
             </strong>
           </div>
-          {selectedAchievement.unlocked && <p className="achievement-bonus"><Sparkles size={16} /> +100 XP earned once</p>}
+          {selectedAchievement.unlocked && <p className="achievement-bonus"><Sparkles size={16} /> +{achievementXp(selectedAchievement.id)} XP earned once</p>}
           {selectedAchievement.unlockedAt && (
             <p className="achievement-date">
               Earned{" "}

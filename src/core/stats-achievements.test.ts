@@ -32,7 +32,7 @@ test('thresholds unlock precisely, progress is capped, and several same-day sess
   assert.equal(badges.find(badge => badge.id === 'sessions-25')?.unlockedAt, sameDay[24].completedAt);
   assert.equal(badges.find(badge => badge.id === 'streak-3')?.progress, 1);
   assert.equal(badges.find(badge => badge.id === 'active-days-30')?.progress, 1);
-  assert.equal(getStats(sameDay, new Date(2026, 9, 7, 12)).totalXp, 560);
+  assert.equal(getStats(sameDay, new Date(2026, 9, 7, 12)).totalXp, 490);
 });
 test('earned streak badge remains earned after a break; first unlock dates are stable under history order', () => {
   const old = days(new Date(2026, 8, 18), 7);
@@ -102,7 +102,7 @@ test('completed session storage/export/import round trip preserves XP and achiev
   assert.equal(loaded.error, null); assert.deepEqual(parseImport(stored), data);
   assert.equal(loaded.data.session?.paused, true);
   const records = recordCompletion(loaded.data.completions, completion);
-  assert.equal(records.length, 1); assert.equal(getStats(records, new Date(completion.completedAt)).totalXp, 110);
+  assert.equal(records.length, 1); assert.equal(getStats(records, new Date(completion.completedAt)).totalXp, 40);
   assert.deepEqual(getAchievements(records, auditNow), getAchievements(data.completions, auditNow));
 });
 test('unfinished or unrelated workouts cannot create an XP completion record', () => {
@@ -122,7 +122,7 @@ test('future imported dates stay stored but do not count as completed until thei
   const imported = parseImport(JSON.stringify({ ...freshData(), completions: [past, future, tomorrow] }));
   assert.equal(imported.completions.length, 3);
   assert.equal(getStats([...imported.completions, past], now).totalSessions, 1);
-  assert.equal(getStats(imported.completions, now).totalXp, 110);
+  assert.equal(getStats(imported.completions, now).totalXp, 40);
   assert.equal(getAchievements(imported.completions, now).find(badge => badge.id === 'sessions-10')?.progress, 1);
   assert.equal(getStats(imported.completions, new Date(2026, 9, 7, 13)).totalSessions, 2);
   assert.equal(getStats(imported.completions, new Date(2026, 9, 8, 12)).activeDays, 2);
@@ -162,7 +162,7 @@ test('achievement XP is derived once from first unlock and survives reload, dupl
   const second = completed(new Date(2026, 9, 7, 13), 'new-second');
   const records = [first, second];
   const now = new Date(2026, 9, 8);
-  const expected = 20 + 100;
+  const expected = 20 + 30;
   assert.equal(getStats(records, now).totalXp, expected);
   assert.equal(getStats([...records, first], now).totalXp, expected);
   assert.equal(getStats(records, now, new Date(2026, 9, 7)).calendar[6].xp, expected);

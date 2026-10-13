@@ -15,10 +15,10 @@ test('charts unlock at 100 total XP and retain every explicit zero bin', () => {
   const records = Array.from({ length: 10 }, (_, index) => record(`workout-${index}`, new Date(2026, 9, 7, 8, index)));
   for (const count of [0, 1, 9, 10]) {
     const charts = getActivityCharts(records.slice(0, count), now);
-    assert.equal(charts.eligible, count > 0);
+    assert.equal(charts.eligible, count >= 7);
     assert.equal(charts.totalSessions, count);
     assert.equal(charts.totalXp, getStats(records.slice(0, count), now).totalXp);
-    assert.equal(charts.remainingToUnlock, count === 0 ? 100 : 0);
+    assert.equal(charts.remainingToUnlock, count === 0 ? 100 : count === 1 ? 60 : 0);
     assert.deepEqual(charts.weekdays.map(bin => bin.label), ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
     assert.deepEqual(charts.weekdays.map(bin => bin.weekday), [1, 2, 3, 4, 5, 6, 7]);
     assert.equal(charts.hours.length, 24);
@@ -28,7 +28,9 @@ test('charts unlock at 100 total XP and retain every explicit zero bin', () => {
     assert.ok(charts.hours.filter(bin => bin.hour !== 8).every(bin => bin.count === 0));
   }
   assert.equal(ACTIVITY_CHART_THRESHOLD, 100);
-  assert.deepEqual(getActivityCharts(records.slice(0, 1), now).xpTimeline, [{ date: '2026-10-07', earnedXp: 110, totalXp: 110 }]);
+  assert.deepEqual(getActivityCharts(records.slice(0, 1), now).xpTimeline, [{ date: '2026-10-07', earnedXp: 40, totalXp: 40 }]);
+  assert.equal(getActivityCharts(records.slice(0, 6), now).remainingToUnlock, 10);
+  assert.equal(getActivityCharts(records.slice(0, 7), now).totalXp, 100);
 });
 test('chart eligibility and XP history ignore duplicate IDs and future completions', () => {
   const now = new Date(2026, 9, 8, 12);
@@ -55,10 +57,10 @@ test('cumulative XP groups awards by local day and stays flat across days withou
   const charts = getActivityCharts(records, new Date(2026, 9, 13, 12));
   assert.equal(charts.asOfDate, '2026-10-13');
   assert.deepEqual(charts.xpTimeline, [
-    { date: '2026-10-05', earnedXp: 120, totalXp: 120 },
-    { date: '2026-10-08', earnedXp: 10, totalXp: 130 },
+    { date: '2026-10-05', earnedXp: 50, totalXp: 50 },
+    { date: '2026-10-08', earnedXp: 10, totalXp: 60 },
   ]);
-  assert.equal(charts.totalXp, 130);
+  assert.equal(charts.totalXp, 60);
   assert.equal(charts.totalXp, getStats(records, new Date(2026, 9, 13, 12)).totalXp);
 });
 test('weekday and hour both use local completedAt and can be recalculated when the timezone changes', () => {

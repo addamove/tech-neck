@@ -4,6 +4,8 @@ import { completedHistory } from './history';
 import { ROUTINES } from './config';
 
 export const ACHIEVEMENT_XP = 100;
+export const FIRST_WORKOUT_XP = 30;
+export const achievementXp = (id: string) => id === 'first-workout' ? FIRST_WORKOUT_XP : ACHIEVEMENT_XP;
 
 export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
   { id: 'first-workout', title: 'First Step', description: 'Your new routine starts here.', criterion: 'Complete your first workout.', metric: 'sessions', target: 1 },

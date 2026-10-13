@@ -125,7 +125,7 @@ test('statistics use local calendar dates, Monday weeks and consecutive workout 
   const dates = [new Date(2026, 9, 4, 23, 59), new Date(2026, 9, 5, 0, 1), new Date(2026, 9, 6, 12), new Date(2026, 9, 7, 11), new Date(2026, 9, 7, 11, 30)];
   const records = dates.map((date, index) => ({ id: `stats-${index}`, routineId: DEFAULT_ROUTINE.id, startedAt: date.toISOString(), completedAt: date.toISOString(), elapsedMs: 0, xp: 10, completedExerciseIds: [], skippedExerciseIds: DEFAULT_ROUTINE.exercises.map(item => item.id) }));
   const stats = getStats(records, now);
-  assert.equal(stats.totalXp, 250); assert.equal(stats.thisWeek, 4); assert.equal(stats.lastSevenDays, 5); assert.equal(stats.currentStreak, 4);
+  assert.equal(stats.totalXp, 180); assert.equal(stats.thisWeek, 4); assert.equal(stats.lastSevenDays, 5); assert.equal(stats.currentStreak, 4);
   assert.equal(stats.calendar.length, 31);
   assert.equal(stats.calendar.find(day => day.date === localDateKey(now))?.count, 2);
   assert.equal(getStats(records.slice(0, 3), now).currentStreak, 3);

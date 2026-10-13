@@ -1,4 +1,4 @@
-import { ACHIEVEMENT_XP, getAchievements } from './achievements';
+import { achievementXp, getAchievements } from './achievements';
 import { completedHistory } from './history';
 import { dayNumber, localDateKey } from './localDates';
 import type { Completion } from './types';
@@ -16,7 +16,7 @@ export function getXpTimeline(records: Completion[], now = new Date()): XpDay[] 
   for (const achievement of getAchievements(history, now)) {
     if (!achievement.unlockedAt) continue;
     const date = localDateKey(new Date(achievement.unlockedAt));
-    earnedByDay.set(date, (earnedByDay.get(date) ?? 0) + ACHIEVEMENT_XP);
+    earnedByDay.set(date, (earnedByDay.get(date) ?? 0) + achievementXp(achievement.id));
   }
   let totalXp = 0;
   return [...earnedByDay.entries()]

@@ -33,7 +33,7 @@ test('each illustration choice survives storage/export/import without changing v
     assert.equal(exportedAndImported.settings.illustrationStyle, illustrationStyle);
     assert.equal(exportedAndImported.settings.voiceGender, 'male'); assert.equal(exportedAndImported.settings.voiceEnabled, false);
     assert.deepEqual(exportedAndImported.session, active); assert.deepEqual(exportedAndImported.completions, [completion]);
-    assert.equal(getStats(exportedAndImported.completions, now).totalXp, 110);
+    assert.equal(getStats(exportedAndImported.completions, now).totalXp, 40);
   }
 });
 test('invalid explicit illustration values are rejected instead of silently replacing a choice', () => {
