@@ -41,3 +41,18 @@ test("future-dated imported records are evaluated at the same time in both histo
   const history = Array.from({ length: 10 }, (_, index) => record(`import-${index}`, "2026-10-08T11:59:59.000Z"));
   assert.deepEqual(newlyEarnedAchievements(snapshot("active", history), snapshot("complete", [...history, record("new-workout")])), []);
 });
+
+test("new eye and mixed-family milestones use the existing celebration queue", () => {
+  const before = [
+    { ...record('eye-one'), routineId: 'eye-gym', xp: 5 },
+    { ...record('eye-two', '2026-10-08T13:00:00.000Z'), routineId: 'eye-gym-level-2', xp: 5 },
+    { ...record('hands', '2026-10-08T14:00:00.000Z'), routineId: 'hands-level-1', xp: 5 },
+    record('neck', '2026-10-08T15:00:00.000Z'),
+  ];
+  const after = [...before, { ...record('new-workout', '2026-10-08T16:00:00.000Z'), routineId: 'eye-gym-level-2', xp: 5 }];
+  assert.deepEqual(newlyEarnedAchievements(snapshot('active', before), snapshot('complete', after)), ['eyes-three-day']);
+  assert.deepEqual(newlyEarnedAchievements(snapshot('complete', after), snapshot('complete', after)), []);
+  const mixedBefore = [record('neck'), { ...record('hands', '2026-10-08T13:00:00.000Z'), routineId: 'hands-level-1', xp: 5 }];
+  const mixedAfter = [...mixedBefore, { ...record('new-workout', '2026-10-08T14:00:00.000Z'), routineId: 'eye-gym', xp: 5 }];
+  assert.ok(newlyEarnedAchievements(snapshot('active', mixedBefore), snapshot('complete', mixedAfter)).includes('all-three-one-day'));
+});

@@ -8,4 +8,4 @@
 - Keep durations and movement intervals configurable in core configuration. Preserve wake lock support, local storage, and backward-compatible JSON export/import.
 - Complete and verify the feature before committing and pushing. Follow the user's current authorization for publishing.
 
-- Eye Gym is marker-only regardless of the selected illustration style. Keep its active duration at 180 seconds (30 blinking + 60 distance/rest + 30 circles + 60 palming); preparation is additional. Keep research limitations in docs/eye-gym.md.
+- Eye Gym is marker-only regardless of the selected illustration style. Level 1 has 180 active seconds (30 blinking + 60 distance/rest + 30 circles + 60 palming); Level 2 has 300 active seconds with 180 seconds of palming. Preparation is additional. Keep research limitations in docs/eye-gym.md.

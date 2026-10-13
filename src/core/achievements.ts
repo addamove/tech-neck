@@ -1,6 +1,9 @@
 import type { Achievement, AchievementDefinition, Completion } from './types';
-import { dayNumber, localDateKey } from './stats';
+import { dayNumber, localDateKey } from './localDates';
 import { completedHistory } from './history';
+import { ROUTINES } from './config';
+
+export const ACHIEVEMENT_XP = 100;
 
 export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
   { id: 'first-workout', title: 'First Step', description: 'Your new routine starts here.', criterion: 'Complete your first workout.', metric: 'sessions', target: 1 },
@@ -13,22 +16,47 @@ export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
   { id: 'hands-five', title: 'High Five', description: 'Five gentle resets for your hands and wrists.', criterion: 'Complete 5 hands workouts.', metric: 'sessions', target: 5, routineId: 'hands-level-1' },
   { id: 'hands-ten', title: 'Helping Hands', description: 'Ten moments of care for your hands.', criterion: 'Complete 10 hands workouts.', metric: 'sessions', target: 10, routineId: 'hands-level-1' },
   { id: 'hands-days-7', title: 'A Hand Habit', description: 'Make room for your hands on seven different days.', criterion: 'Complete hands workouts on 7 different days. They do not need to be consecutive.', metric: 'activeDays', target: 7, routineId: 'hands-level-1' },
+  { id: 'eyes-three-day', title: 'Eyes on Three', description: 'Three gentle screen breaks in one day.', criterion: 'Complete Eye Gym 3 times in one day.', metric: 'dailySessions', target: 3, family: 'eyes' },
+  { id: 'eyes-five-days', title: 'Five Days of Focus', description: 'Five days of making room for your eyes.', criterion: 'Complete Eye Gym 3 times a day for 5 consecutive days.', metric: 'threeSessionStreak', target: 5, family: 'eyes' },
+  { id: 'all-three-one-day', title: 'Full Circle', description: 'Care for your neck, hands and eyes in one day.', criterion: 'Complete Neck, Hands and Eye Gym in one day.', metric: 'familiesToday', target: 3 },
 ];
 
-/** Derived from history only. Badges add no XP and never require persisted flags. */
+type Values = Record<AchievementDefinition['metric'], number>;
+type Scope = { values: Values; dates: Set<string>; dailyCounts: Map<string, number>; previousDay: number | null; consecutive: number; previousTripleDay: number | null; tripleConsecutive: number };
+const newScope = (): Scope => ({ values: { sessions: 0, bestStreak: 0, activeDays: 0, dailySessions: 0, threeSessionStreak: 0, familiesToday: 0 }, dates: new Set(), dailyCounts: new Map(), previousDay: null, consecutive: 0, previousTripleDay: null, tripleConsecutive: 0 });
+const scopeKey = (definition: AchievementDefinition) => definition.routineId ? `routine:${definition.routineId}` : definition.family ? `family:${definition.family}` : 'all';
+
+/** Badges and their award dates are derived from canonical completed history. */
 export function getAchievements(records: Completion[], now = new Date()): Achievement[] {
   const ordered = completedHistory(records, now);
-  const scopes = new Map<string, { values: { sessions: number; bestStreak: number; activeDays: number }; dates: Set<string>; previousDay: number | null; consecutive: number }>();
+  const scopes = new Map<string, Scope>();
   for (const definition of ACHIEVEMENT_DEFINITIONS) {
-    const scope = definition.routineId ?? '';
-    if (!scopes.has(scope)) scopes.set(scope, { values: { sessions: 0, bestStreak: 0, activeDays: 0 }, dates: new Set(), previousDay: null, consecutive: 0 });
+    const scope = scopeKey(definition);
+    if (!scopes.has(scope)) scopes.set(scope, newScope());
   }
   const unlocks = new Map<string, string>();
+  const familiesByDay = new Map<string, Set<string>>();
   for (const record of ordered) {
     const date = localDateKey(new Date(record.completedAt));
+    const family = ROUTINES.find(routine => routine.id === record.routineId)?.family;
+    if (family) {
+      const families = familiesByDay.get(date) ?? new Set<string>();
+      families.add(family); familiesByDay.set(date, families);
+    }
     for (const [scope, state] of scopes) {
-      if (scope && scope !== record.routineId) continue;
+      if (scope.startsWith('routine:') && scope !== `routine:${record.routineId}`) continue;
+      if (scope.startsWith('family:') && scope !== `family:${family}`) continue;
       state.values.sessions++;
+      const dailyCount = (state.dailyCounts.get(date) ?? 0) + 1;
+      state.dailyCounts.set(date, dailyCount);
+      state.values.dailySessions = Math.max(state.values.dailySessions, dailyCount);
+      if (scope === 'all') state.values.familiesToday = Math.max(state.values.familiesToday, familiesByDay.get(date)?.size ?? 0);
+      if (dailyCount === 3) {
+        const day = dayNumber(date);
+        state.tripleConsecutive = state.previousTripleDay !== null && day === state.previousTripleDay + 1 ? state.tripleConsecutive + 1 : 1;
+        state.previousTripleDay = day;
+        state.values.threeSessionStreak = Math.max(state.values.threeSessionStreak, state.tripleConsecutive);
+      }
       if (!state.dates.has(date)) {
         const day = dayNumber(date);
         state.consecutive = state.previousDay !== null && day === state.previousDay + 1 ? state.consecutive + 1 : 1;
@@ -38,12 +66,12 @@ export function getAchievements(records: Completion[], now = new Date()): Achiev
       }
     }
     for (const definition of ACHIEVEMENT_DEFINITIONS) {
-      const values = scopes.get(definition.routineId ?? '')!.values;
+      const values = scopes.get(scopeKey(definition))!.values;
       if (!unlocks.has(definition.id) && values[definition.metric] >= definition.target) unlocks.set(definition.id, record.completedAt);
     }
   }
   return ACHIEVEMENT_DEFINITIONS.map(definition => {
-    const values = scopes.get(definition.routineId ?? '')!.values;
+    const values = scopes.get(scopeKey(definition))!.values;
     const progress = Math.min(definition.target, values[definition.metric]);
     return { ...definition, progress, progressPercent: Math.round(progress / definition.target * 100), unlocked: unlocks.has(definition.id), unlockedAt: unlocks.get(definition.id) ?? null };
   });

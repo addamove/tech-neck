@@ -29,7 +29,7 @@ test('old ten-minute completion history and its completed session survive load/i
   const loaded = loadData({ getItem: () => serialized });
   assert.equal(loaded.error, null); assert.deepEqual(loaded.data, data);
   assert.equal(loaded.data.completions[0].elapsedMs, 600000);
-  assert.equal(getStats(loaded.data.completions, new Date('2026-10-08T12:00:00.000Z')).totalXp, 10);
+  assert.equal(getStats(loaded.data.completions, new Date('2026-10-08T12:00:00.000Z')).totalXp, 110);
   assert.throws(() => parseImport(JSON.stringify({ ...data, completions: [{ ...oldRecord, elapsedMs: 600001 }] })), /elapsedMs/);
 });
 test('the earlier8:45 routine remains valid alongside ten-minute history after chin duration changes', () => {
@@ -42,7 +42,7 @@ test('the earlier8:45 routine remains valid alongside ten-minute history after c
   assert.deepEqual(parseImport(JSON.stringify(data)), data);
   const loaded = loadData({ getItem: () => JSON.stringify(data) });
   assert.equal(loaded.error, null); assert.deepEqual(loaded.data.completions, data.completions);
-  assert.equal(getStats(loaded.data.completions, new Date('2026-10-08T12:00:00.000Z')).totalXp, 20);
+  assert.equal(getStats(loaded.data.completions, new Date('2026-10-08T12:00:00.000Z')).totalXp, 120);
 });
 test('old chin progress in the removed trailing rest advances to paused preparation without losing elapsed time', () => {
   for (const seconds of [57.999, 58, 59, 59.999]) {

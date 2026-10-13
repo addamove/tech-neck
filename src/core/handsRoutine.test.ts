@@ -39,7 +39,7 @@ test('mixed history preserves neck XP and routine-specific validation through ve
   data.session = { ...advanceSession(createSession(DEFAULT_ROUTINE, 'saved-neck'), 22000, DEFAULT_ROUTINE), paused: true };
   const serialized = JSON.stringify(data);
   assert.deepEqual(parseImport(serialized), data); assert.deepEqual(loadData({ getItem: () => serialized }).data, data);
-  assert.equal(getStats(records, now).totalXp, 15); assert.equal(data.session.routineId, DEFAULT_ROUTINE.id);
+  assert.equal(getStats(records, now).totalXp, 215); assert.equal(data.session.routineId, DEFAULT_ROUTINE.id);
   assert.throws(() => parseImport(JSON.stringify({ ...data, completions: [{ ...records[1], xp: 10 }] })), /XP/);
   assert.throws(() => parseImport(JSON.stringify({ ...data, completions: [{ ...records[0], xp: 5 }] })), /XP/);
   assert.throws(() => parseImport(JSON.stringify({ ...data, completions: [{ ...records[1], elapsedMs: 255001 }] })), /elapsedMs/);
@@ -55,7 +55,7 @@ test('ten mixed workouts unlock shared charts while hands milestones count only 
   const charts = getActivityCharts(records, now);
   assert.equal(charts.eligible, true); assert.equal(charts.totalSessions, 10);
   assert.equal(charts.hours.reduce((sum, hour) => sum + hour.count, 0), 10); assert.equal(charts.weekdays.reduce((sum, day) => sum + day.count, 0), 10);
-  assert.equal(getStats(records, now).totalXp, 75);
+  assert.equal(getStats(records, now).totalXp, 475);
   const badges = getAchievements(records, now);
   assert.equal(badges.find(badge => badge.id === 'sessions-10')!.unlocked, true);
   assert.equal(badges.find(badge => badge.id === 'hands-first')!.unlocked, true); assert.equal(badges.find(badge => badge.id === 'hands-five')!.unlocked, true);

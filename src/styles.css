@@ -1770,6 +1770,7 @@ svg {
   color: var(--deep);
   white-space: nowrap;
 }
+.achievement-bonus { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--deep); font-weight: 700; font-size: 13px; margin: 14px 0 0; }
 .dialog .achievement-date {
   font-size: 10px;
   text-align: center;
@@ -2108,7 +2109,9 @@ svg {
   --shell-shadow: #19445b10;
 }
 .routine-card[data-routine="eye-gym"],
-.routine-backlight-card[data-routine="eye-gym"] {
+.routine-card[data-routine="eye-gym-level-2"],
+.routine-backlight-card[data-routine="eye-gym"],
+.routine-backlight-card[data-routine="eye-gym-level-2"] {
   --teal: #65bfd8;
   --deep: #277e9f;
   --control-tint: #eef8fc;
@@ -2121,7 +2124,8 @@ svg {
   --play-halo-three: #8bccf080;
   --play-halo-four: #b5f1f066;
 }
-.home-screen[data-routine="eye-gym"] {
+.home-screen[data-routine="eye-gym"],
+.home-screen[data-routine="eye-gym-level-2"] {
   --wave-back-one: #ceeaf8;
   --wave-back-two: #a9deef;
   --wave-back-three: #88cfe4;

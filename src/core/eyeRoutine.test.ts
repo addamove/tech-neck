@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { EYE_ROUTINE } from './eyeRoutine';
+import { EYE_ROUTINE, EYE_LEVEL_2_ROUTINE } from './eyeRoutine';
 import { getSelectedRoutine } from './config';
 import { advanceSession, completionFor, createSession, getPose } from './engine';
 import { activeVoiceTimeline, dueVoiceCue } from './voiceTiming';
@@ -24,10 +24,27 @@ test('Eye Gym has two minutes of exercises then one minute palming, excluding pr
   assert.equal(getPose(circles, 15).poseId, 'eyes-circle-counterclockwise');
 });
 
+test('Eye Gym Level 2 changes only palming to three minutes and keeps release in the final five seconds', () => {
+  assert.equal(EYE_LEVEL_2_ROUTINE.family, 'eyes');
+  assert.deepEqual(EYE_LEVEL_2_ROUTINE.exercises.map(exercise => exercise.durationSeconds), [30, 60, 30, 180]);
+  assert.deepEqual(EYE_LEVEL_2_ROUTINE.exercises.slice(0, 3), EYE_ROUTINE.exercises.slice(0, 3));
+  const palming = EYE_LEVEL_2_ROUTINE.exercises[3];
+  assert.deepEqual(palming.cues.map(cue => cue.atSeconds), [0, 30, 175]);
+  assert.equal(getPose(palming, 179.999).poseId, 'eyes-palming');
+  const routine = getSelectedRoutine(EYE_LEVEL_2_ROUTINE.id, { preparationSeconds: 5, disabledExerciseIds: {} });
+  assert.equal(routine.exercises.reduce((sum, exercise) => sum + exercise.durationSeconds, 0), 300);
+  assert.equal(routine.exercises.reduce((sum, exercise) => sum + exercise.prepSeconds, 0), 20);
+  const session = advanceSession(createSession(routine, 'eye-level-two'), 320000, routine);
+  assert.equal(session.phase, 'complete');
+  const completion = completionFor(session, routine);
+  assert.equal(completion.xp, 5);
+  assert.equal(parseImport(JSON.stringify({ ...freshData(), session, completions: [completion] })).completions[0].routineId, EYE_LEVEL_2_ROUTINE.id);
+});
+
 test('Eye Gym voice cues are unique, fit their slots in both voices and match blink boundaries', () => {
   for (const gender of ['', 'male/']) {
     const manifest = JSON.parse(readFileSync(`public/audio/${gender}manifest.json`, 'utf8'));
-    for (const exercise of EYE_ROUTINE.exercises) {
+    for (const exercise of [...EYE_ROUTINE.exercises, EYE_LEVEL_2_ROUTINE.exercises[3]]) {
       const timeline = activeVoiceTimeline(exercise);
       assert.equal(new Set(timeline.map(cue => cue.atSeconds)).size, timeline.length);
       for (const cue of timeline) {

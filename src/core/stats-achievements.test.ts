@@ -14,9 +14,9 @@ function completed(date: Date, id: string): Completion {
 function days(start: Date, count: number, step = 1): Completion[] {
   return Array.from({ length: count }, (_, index) => completed(new Date(start.getFullYear(), start.getMonth(), start.getDate() + index * step, 12), `day-${index}`));
 }
-test('empty history has ten locked badges with zero progress and zero statistics', () => {
+test('empty history has thirteen locked badges with zero progress and zero statistics', () => {
   const badges = getAchievements([]);
-  assert.equal(badges.length, 10);
+  assert.equal(badges.length, 13);
   assert.ok(badges.every(badge => !badge.unlocked && badge.unlockedAt === null && badge.progress === 0 && badge.progressPercent === 0));
   const stats = getStats([]);
   assert.equal(stats.totalXp, 0); assert.equal(stats.currentStreak, 0); assert.equal(stats.bestStreak, 0); assert.equal(stats.activeDays, 0);
@@ -32,7 +32,7 @@ test('thresholds unlock precisely, progress is capped, and several same-day sess
   assert.equal(badges.find(badge => badge.id === 'sessions-25')?.unlockedAt, sameDay[24].completedAt);
   assert.equal(badges.find(badge => badge.id === 'streak-3')?.progress, 1);
   assert.equal(badges.find(badge => badge.id === 'active-days-30')?.progress, 1);
-  assert.equal(getStats(sameDay, new Date(2026, 9, 7, 12)).totalXp, 260); // Achievements never add bonus XP.
+  assert.equal(getStats(sameDay, new Date(2026, 9, 7, 12)).totalXp, 560);
 });
 test('earned streak badge remains earned after a break; first unlock dates are stable under history order', () => {
   const old = days(new Date(2026, 8, 18), 7);
@@ -102,7 +102,7 @@ test('completed session storage/export/import round trip preserves XP and achiev
   assert.equal(loaded.error, null); assert.deepEqual(parseImport(stored), data);
   assert.equal(loaded.data.session?.paused, true);
   const records = recordCompletion(loaded.data.completions, completion);
-  assert.equal(records.length, 1); assert.equal(getStats(records, new Date(completion.completedAt)).totalXp, 10);
+  assert.equal(records.length, 1); assert.equal(getStats(records, new Date(completion.completedAt)).totalXp, 110);
   assert.deepEqual(getAchievements(records, auditNow), getAchievements(data.completions, auditNow));
 });
 test('unfinished or unrelated workouts cannot create an XP completion record', () => {
@@ -122,10 +122,54 @@ test('future imported dates stay stored but do not count as completed until thei
   const imported = parseImport(JSON.stringify({ ...freshData(), completions: [past, future, tomorrow] }));
   assert.equal(imported.completions.length, 3);
   assert.equal(getStats([...imported.completions, past], now).totalSessions, 1);
-  assert.equal(getStats(imported.completions, now).totalXp, 10);
+  assert.equal(getStats(imported.completions, now).totalXp, 110);
   assert.equal(getAchievements(imported.completions, now).find(badge => badge.id === 'sessions-10')?.progress, 1);
   assert.equal(getStats(imported.completions, new Date(2026, 9, 7, 13)).totalSessions, 2);
   assert.equal(getStats(imported.completions, new Date(2026, 9, 8, 12)).activeDays, 2);
+});
+
+test('both Eye Gym levels count toward three in a day and five consecutive qualifying days', () => {
+  const eyes = Array.from({ length: 5 }, (_, day) => Array.from({ length: 3 }, (_, session) => ({
+    ...completed(new Date(2026, 9, 10 + day, 9 + session), `eyes-${day}-${session}`),
+    routineId: session === 1 ? 'eye-gym-level-2' : 'eye-gym', xp: 5,
+  }))).flat();
+  const firstTwo = getAchievements(eyes.slice(0, 2), auditNow);
+  assert.equal(firstTwo.find(badge => badge.id === 'eyes-three-day')?.progress, 2);
+  assert.equal(firstTwo.find(badge => badge.id === 'eyes-five-days')?.progress, 0);
+  const firstThree = getAchievements(eyes.slice(0, 3), auditNow);
+  assert.equal(firstThree.find(badge => badge.id === 'eyes-three-day')?.unlockedAt, eyes[2].completedAt);
+  assert.equal(firstThree.find(badge => badge.id === 'eyes-five-days')?.progress, 1);
+  assert.equal(getAchievements(eyes.slice(0, 14), auditNow).find(badge => badge.id === 'eyes-five-days')?.unlocked, false);
+  assert.equal(getAchievements(eyes, auditNow).find(badge => badge.id === 'eyes-five-days')?.unlockedAt, eyes[14].completedAt);
+  const broken = [...eyes.slice(0, 9), ...eyes.slice(12)];
+  assert.equal(getAchievements(broken, auditNow).find(badge => badge.id === 'eyes-five-days')?.progress, 3);
+});
+
+test('Full Circle requires three distinct families on one local day', () => {
+  const sameDay = new Date(2026, 9, 13, 12);
+  const neckOne = completed(sameDay, 'neck-one');
+  const neckTwo = { ...completed(new Date(2026, 9, 13, 13), 'neck-two'), routineId: 'level-2' };
+  const hands = { ...completed(new Date(2026, 9, 13, 14), 'hands'), routineId: 'hands-level-1', xp: 5 };
+  const eyes = { ...completed(new Date(2026, 9, 13, 15), 'eyes'), routineId: 'eye-gym-level-2', xp: 5 };
+  assert.equal(getAchievements([neckOne, neckTwo], auditNow).find(badge => badge.id === 'all-three-one-day')?.progress, 1);
+  assert.equal(getAchievements([neckOne, neckTwo, hands], auditNow).find(badge => badge.id === 'all-three-one-day')?.progress, 2);
+  assert.equal(getAchievements([neckOne, hands, { ...eyes, completedAt: new Date(2026, 9, 14, 15).toISOString() }], auditNow).find(badge => badge.id === 'all-three-one-day')?.unlocked, false);
+  assert.equal(getAchievements([neckOne, neckTwo, hands, eyes], auditNow).find(badge => badge.id === 'all-three-one-day')?.unlockedAt, eyes.completedAt);
+});
+
+test('achievement XP is derived once from first unlock and survives reload, duplicates and backup import', () => {
+  const first = completed(new Date(2026, 9, 7, 12), 'old-first');
+  const second = completed(new Date(2026, 9, 7, 13), 'new-second');
+  const records = [first, second];
+  const now = new Date(2026, 9, 8);
+  const expected = 20 + 100;
+  assert.equal(getStats(records, now).totalXp, expected);
+  assert.equal(getStats([...records, first], now).totalXp, expected);
+  assert.equal(getStats(records, now, new Date(2026, 9, 7)).calendar[6].xp, expected);
+  const restored = parseImport(JSON.stringify({ ...freshData(), completions: records })).completions;
+  assert.equal(getStats(restored, now).totalXp, expected);
+  assert.equal(getStats(parseImport(JSON.stringify({ ...freshData(), completions: restored })).completions, now).totalXp, expected);
+  assert.equal(getAchievements(restored, now).find(badge => badge.id === 'first-workout')?.unlockedAt, first.completedAt);
 });
 test('invalid completion dates, calendar overflows, mismatched sessions and pre-start completions reject imports', () => {
   const record = completed(new Date(2026, 9, 7, 12), 'invalid-date');

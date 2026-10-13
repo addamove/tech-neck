@@ -343,7 +343,7 @@ export default function ExerciseArt({
           arrows: [{ path: "M575 225H653", head: "M685 225L653 205V245Z" }],
         }
       : isRest && (poseId === "back-neck-stretch" || neutralSideRest)
-        ? { label: "Rest for two seconds. Release the stretch.", arrows: [] }
+        ? { label: "Rest for two seconds.", arrows: [] }
         : MOVEMENTS[poseId];
   return (
     <div className="exercise-art" key={`${illustrationStyle}:${poseId}`}>

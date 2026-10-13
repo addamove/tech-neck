@@ -1,9 +1,8 @@
 import type { Completion, WorkoutStats } from './types';
 import { completedHistory } from './history';
-export function localDateKey(date: Date): string {
-  return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-export function dayNumber(dateKey: string): number { return Date.parse(`${dateKey}T00:00:00.000Z`) / 86400000; }
+import { ACHIEVEMENT_XP, getAchievements } from './achievements';
+import { dayNumber, localDateKey } from './localDates';
+export { dayNumber, localDateKey } from './localDates';
 function localDay(year: number, month: number, day: number) {
   const date = new Date(0); date.setFullYear(year, month, day); date.setHours(0, 0, 0, 0); return date;
 }
@@ -14,6 +13,12 @@ export function getStats(records: Completion[], now = new Date(), month = now): 
   for (const item of records) {
     const key = localDateKey(new Date(item.completedAt));
     byDay.set(key, [...(byDay.get(key) ?? []), item]);
+  }
+  const bonusByDay = new Map<string, number>();
+  for (const achievement of getAchievements(records, now)) {
+    if (!achievement.unlockedAt) continue;
+    const key = localDateKey(new Date(achievement.unlockedAt));
+    bonusByDay.set(key, (bonusByDay.get(key) ?? 0) + ACHIEVEMENT_XP);
   }
   const today = localDateKey(now);
   const weekStart = dayOffset(now, -((now.getDay() + 6) % 7));
@@ -32,7 +37,7 @@ export function getStats(records: Completion[], now = new Date(), month = now): 
   const calendar = Array.from({ length: localDay(month.getFullYear(), month.getMonth() + 1, 0).getDate() }, (_, index) => {
     const date = localDateKey(localDay(month.getFullYear(), month.getMonth(), index + 1));
     const entries = byDay.get(date) ?? [];
-    return { date, count: entries.length, xp: entries.reduce((sum, entry) => sum + entry.xp, 0), isToday: date === today };
+    return { date, count: entries.length, xp: entries.reduce((sum, entry) => sum + entry.xp, 0) + (bonusByDay.get(date) ?? 0), isToday: date === today };
   });
-  return { totalSessions: records.length, totalXp: records.reduce((sum, item) => sum + item.xp, 0), thisWeek: records.filter(item => new Date(item.completedAt) >= weekStart && new Date(item.completedAt) < end).length, lastSevenDays: records.filter(item => new Date(item.completedAt) >= sevenStart && new Date(item.completedAt) < end).length, thisMonth: records.filter(item => new Date(item.completedAt) >= monthStart && new Date(item.completedAt) < end).length, currentStreak, bestStreak, activeDays: byDay.size, calendar };
+  return { totalSessions: records.length, totalXp: records.reduce((sum, item) => sum + item.xp, 0) + [...bonusByDay.values()].reduce((sum, bonus) => sum + bonus, 0), thisWeek: records.filter(item => new Date(item.completedAt) >= weekStart && new Date(item.completedAt) < end).length, lastSevenDays: records.filter(item => new Date(item.completedAt) >= sevenStart && new Date(item.completedAt) < end).length, thisMonth: records.filter(item => new Date(item.completedAt) >= monthStart && new Date(item.completedAt) < end).length, currentStreak, bestStreak, activeDays: byDay.size, calendar };
 }

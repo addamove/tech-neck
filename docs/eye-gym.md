@@ -1,15 +1,15 @@
-# Eye Gym · Level 1
+# Eye Gym · Levels 1 and 2
 
-Approved active duration: 180 seconds, with the global 5/10/20-second preparation setting added before each enabled exercise. Four exercises, 5 XP, the same Activity totals and charts as the other routines. All illustration preferences use the marker assets for this routine; selecting Eye Gym does not change the user's Neck/Hands artwork preference.
+Level 1 has 180 active seconds; Level 2 has 300 active seconds. Both use the global 5/10/20-second preparation setting before each enabled exercise, four exercises, 5 workout XP, and the same Activity totals and charts as other routines. All illustration preferences use the marker assets for Eye Gym; selecting it does not change the user's Neck/Hands artwork preference.
 
 | Exercise | Active time | Sequence |
 |---|---:|---|
 | Soft blinking | 30 seconds | Five cycles: 2 seconds open, 2 seconds closed, 2 seconds gentle squeeze without wrinkling the outer corners |
 | Look away & rest | 60 seconds | Twice: 20 seconds looking about 6 metres away, blinking naturally, then 10 seconds eyes closed |
 | Gentle eye circles | 30 seconds | 15 seconds clockwise, then 15 counterclockwise; small comfortable range, head still, no straining |
-| Palming | 60 seconds | Supported elbows, clean cupped hands shading closed eyes without touching/pressing the eyeballs; relaxed breathing; closing eyes with hands down is an alternative |
+| Palming | 60 seconds in Level 1; 180 seconds in Level 2 | Supported elbows, clean cupped hands shading closed eyes without touching/pressing the eyeballs; relaxed breathing; closing eyes with hands down is an alternative |
 
-Follow the voice rather than watching the phone. Stop for discomfort or dizziness. This is a screen-break routine, not treatment for an eye condition or a promise to improve eyesight. Persistent symptoms need an eye-care assessment. The final five seconds of palming contain the gentle release instruction.
+Follow the voice rather than watching the phone. Stop for discomfort or dizziness. This is a screen-break routine, not treatment for an eye condition or a promise to improve eyesight. Persistent symptoms need an eye-care assessment. The final five seconds of palming contain the gentle release instruction in both levels.
 
 ## Evidence and limits
 
@@ -19,7 +19,7 @@ Follow the voice rather than watching the phone. Stop for discomfort or dizzines
 - [Hanford occupational-health handout](https://www.hanford.gov/health/files.cfm/Eye_Strain_Handout.pdf) describes palming as a short break. This educational handout is not clinical-trial evidence.
 - [AAO: Common Eye and Vision Myths](https://aao.org/eye-health/tips-prevention/five-vision-myths) distinguishes exercises for particular diagnosed conditions from unsupported general eyesight-improvement claims.
 
-The exact three-minute sequence is a product choice. Eye circles and palming have weaker evidence for screen-related symptoms than breaks/blinking and were included at the user's explicit request. Avoid extreme gaze and pressure on the eyes.
+The exact three- and five-minute sequences are product choices. Eye circles and palming have weaker evidence for screen-related symptoms than breaks/blinking and were included at the user's explicit request. Avoid extreme gaze and pressure on the eyes.
 
 ## Artwork and voice
 

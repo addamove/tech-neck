@@ -56,3 +56,13 @@ test('the hook selection helper preserves Level 2 on the first swipe after loadi
   const next = adjacentRoutineId(familyRoutineIds(ROUTINES, 'hands-level-1', memory), 'hands-level-1', -1);
   assert.equal(next, 'level-2');
 });
+
+test('Eye Gym Level 2 is remembered across family swipes without creating a fourth card', () => {
+  let memory = rememberedRoutines(ROUTINES, 'eye-gym-level-2');
+  let selected = adjacentRoutineId(familyRoutineIds(ROUTINES, 'eye-gym-level-2', memory), 'eye-gym-level-2', 1);
+  assert.equal(selected, 'level-1');
+  memory = rememberedRoutines(ROUTINES, selected, memory);
+  selected = adjacentRoutineId(familyRoutineIds(ROUTINES, selected, memory), selected, -1);
+  assert.equal(selected, 'eye-gym-level-2');
+  assert.equal(familyRoutineIds(ROUTINES, selected, memory).length, 3);
+});

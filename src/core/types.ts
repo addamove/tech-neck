@@ -33,10 +33,11 @@ export interface WorkoutStats {
   totalSessions: number; totalXp: number; thisWeek: number; lastSevenDays: number;
   thisMonth: number; currentStreak: number; bestStreak: number; activeDays: number; calendar: CalendarDay[];
 }
-export type AchievementMetric = 'sessions' | 'bestStreak' | 'activeDays';
+export type AchievementMetric = 'sessions' | 'bestStreak' | 'activeDays' | 'dailySessions' | 'threeSessionStreak' | 'familiesToday';
 export interface AchievementDefinition {
   id: string; title: string; description: string; criterion: string; metric: AchievementMetric; target: number;
   routineId?: string;
+  family?: NonNullable<Routine['family']>;
 }
 export interface Achievement extends AchievementDefinition {
   progress: number; progressPercent: number; unlocked: boolean; unlockedAt: string | null;

@@ -43,3 +43,17 @@ export const EYE_ROUTINE: Routine = {
     },
   ],
 };
+
+// Level 2 keeps the same guided movements and artwork; only the quiet rest is longer.
+export const EYE_LEVEL_2_ROUTINE: Routine = {
+  ...EYE_ROUTINE,
+  id: 'eye-gym-level-2',
+  title: 'Eye Gym · Level 2',
+  subtitle: '2 min eye break + 3 min palming',
+  exercises: EYE_ROUTINE.exercises.map(exercise => exercise.id === 'eye-palming'
+    ? { ...exercise, durationSeconds: 180,
+      poses: [{ ...exercise.poses[0], seconds: 180 }],
+      cues: exercise.cues.map(cue => cue.atSeconds === 55 ? { ...cue, atSeconds: 175 } : { ...cue }),
+    }
+    : exercise),
+};

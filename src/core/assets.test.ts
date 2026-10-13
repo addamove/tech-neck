@@ -7,6 +7,7 @@ import { ROUTINES } from './config';
 import { cueTimeline } from './engine';
 import { COUNTDOWN_CUES, CUE_SLOT_SECONDS, EXERCISE_START_CUE } from './voiceTiming';
 import { CHIN_FOCUS_TIP, CHIN_SHOULDERS_TIP, CHIN_TIP_TIMING } from './chinTips';
+import { ACHIEVEMENT_DEFINITIONS } from './achievements';
 
 test('all illustration styles, badges and legacy audio resolve under both root and Pages base paths', () => {
   for (const path of ['art/chin-v2.webp', 'art/female/chin.webp', 'art/marker/sides.webp', 'badges/streak-3.webp', 'audio/male/example.mp3']) {
@@ -17,6 +18,7 @@ test('all illustration styles, badges and legacy audio resolve under both root a
   }
   assert.equal(publicAssetUrl('/tech-neck/audio/sample.mp3', '/tech-neck/'), '/tech-neck/audio/sample.mp3');
   assert.equal(publicAssetUrl('audio/sample.mp3', '/tech-neck'), '/tech-neck/audio/sample.mp3');
+  for (const badge of ACHIEVEMENT_DEFINITIONS) assert.ok(existsSync(join('public', 'badges', `${badge.id}.webp`)), `Missing badge: ${badge.id}`);
 });
 test('remote audio, media blobs, inline unlock audio and SVG fragment references are preserved', () => {
   for (const path of ['https://cdn.example.com/audio.mp3', '//cdn.example.com/audio.mp3', 'blob:https://example.com/session', 'data:audio/wav;base64,UklGRg==', '#home-wave-back']) {

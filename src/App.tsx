@@ -537,7 +537,7 @@ export default function App() {
               <ArrowLeft size={17} />
               Back
             </button>
-            <span className="header-label">{isEyeRoutine ? "EYE GYM · LEVEL 1" : isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
+            <span className="header-label">{isEyeRoutine ? routine.title.toUpperCase() : isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
             <button
               className="top-icon"
               aria-label={
@@ -1018,7 +1018,7 @@ export default function App() {
               ))}
             </div>
             <small className="achievement-note">
-              Milestones celebrate your progress. Tech Neck earns 10 XP; Hands and Eye Gym earn 5 XP.
+              Tech Neck earns 10 XP; Hands and Eye Gym earn 5 XP. Each milestone earns 100 XP once.
             </small>
           </section>
         </main>
@@ -1316,6 +1316,7 @@ export default function App() {
               {selectedAchievement.progress}/{selectedAchievement.target}
             </strong>
           </div>
+          {selectedAchievement.unlocked && <p className="achievement-bonus"><Sparkles size={16} /> +100 XP earned once</p>}
           {selectedAchievement.unlockedAt && (
             <p className="achievement-date">
               Earned{" "}
@@ -1392,10 +1393,7 @@ export default function App() {
             </strong>
             ,{" "}
             <strong>
-              {importPreview.data.completions.reduce(
-                (sum, record) => sum + record.xp,
-                0,
-              )}{" "}
+              {getStats(importPreview.data.completions).totalXp}{" "}
               XP
             </strong>
             , settings
