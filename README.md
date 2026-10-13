@@ -69,15 +69,15 @@ Chin tucks add one randomly timed neck-length reminder and, in 30% of workouts, 
 
 Activity shows total XP, completed workouts, the current week, the selected calendar month, the current day streak, and recent workouts. Calendar dates use the device's local timezone; weeks start on Monday. Multiple resets on one day count as separate workouts and one active day.
 
-Six achievement medals mark your first reset, 3- and 7-day streaks, 10 and 25 completed workouts, and 30 active days. Tap a medal to see its goal, progress, and first earned date. Achievements are calculated from completed workout history, so importing a backup restores the same milestones. They add no extra XP.
+Six general achievement medals mark your first reset, 3- and 7-day streaks, 10 and 25 completed workouts, and 30 active days. Tap a medal to see its goal, progress, and first earned date. Achievements are calculated from completed workout history, so importing a backup restores the same milestones.
 
-Four additional hands milestones count only hands workouts: first completion, 5 completions, 10 completions, and 7 distinct active days. Existing milestones, calendar, streaks, and charts combine both routines. XP sums each completion's recorded award: 10 for neck and 5 for hands. Earlier neck history and version1 backups keep their original XP.
+Four additional hands milestones count only hands workouts: first completion, 5 completions, 10 completions, and 7 distinct active days. Eye Gym has milestones for 3 sessions in one day and 3 sessions per day for 5 consecutive days; another medal rewards completing all three workout families in one day. Calendar, streaks, charts, and total XP combine every family. Workouts retain their recorded awards: 10 XP for neck and 5 XP for hands or eyes. Each unlocked medal contributes another 100 XP once.
 
 Add the ten hands instructions and reminders to each voice set with `work/venv/bin/python scripts/generate-neural-audio.py --gender female --hands-only` and the same command with `--gender male`. This additive mode preserves existing recordings and manifest entries and limits fitting to 1.5x.
 
 New medals earned by completing a workout automatically open that same detail window with a brief confetti celebration; multiple medals appear one at a time. Loading a page or importing a backup does not replay celebrations. Reduced-motion preferences suppress confetti.
 
-After 10 valid completed workouts, Activity also shows a weekday bar chart and an hourly frequency line chart. Both use all-time history and local completion times, matching the calendar. Duplicate sessions and future-dated records do not count toward the unlock. Each chart includes an accessible count table.
+Activity charts unlock at 100 total XP. They show cumulative XP by date, workout counts by weekday, and workout frequency by hour. All three use all-time history and local completion dates, matching the calendar; the XP chart includes achievement bonuses on the day earned. Duplicate sessions and future-dated records do not count toward the unlock. Each chart includes an accessible data table.
 
 ## Illustration styles
 

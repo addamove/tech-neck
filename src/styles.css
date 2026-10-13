@@ -1490,6 +1490,11 @@ svg {
   color: var(--muted);
   line-height: 1.6;
 }
+.charts-locked { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 17px; border: 1px solid var(--soft-border); border-radius: 16px; background: var(--chart-bg); color: var(--deep); }
+.charts-locked h2 { font-size: 14px; font-weight: 600; }
+.charts-locked p { margin-top: 3px; font-size: 11px; color: var(--muted); }
+.chart-unlock-track { flex-basis: 100%; height: 6px; border-radius: 6px; background: var(--progress-track); overflow: hidden; }
+.chart-unlock-track > span { display: block; height: 100%; background: var(--chart-line); border-radius: inherit; }
 .activity-chart {
   margin: 16px 0 0;
   padding: 17px 13px 12px;
@@ -1534,6 +1539,8 @@ svg {
   stroke-linejoin: round;
   stroke-linecap: round;
 }
+.chart-xp-area { fill: var(--chart-bar); opacity: .13; }
+.chart-xp-line { fill: none; stroke: var(--chart-line); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
 .chart-point {
   fill: var(--chart-line);
   stroke: var(--chart-bg);

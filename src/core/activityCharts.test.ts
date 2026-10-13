@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ACTIVITY_CHART_THRESHOLD, getActivityCharts } from './activityCharts';
-import { ACHIEVEMENT_DEFINITIONS } from './achievements';
 import { DEFAULT_ROUTINE } from './config';
 import { getStats } from './stats';
 import type { Completion } from './types';
@@ -11,14 +10,15 @@ function record(id: string, completedAt: Date): Completion {
 }
 const sum = (bins: { count: number }[]) => bins.reduce((total, bin) => total + bin.count, 0);
 
-test('charts unlock on the tenth completed workout and retain every explicit zero bin', () => {
+test('charts unlock at 100 total XP and retain every explicit zero bin', () => {
   const now = new Date(2026, 9, 8, 12);
   const records = Array.from({ length: 10 }, (_, index) => record(`workout-${index}`, new Date(2026, 9, 7, 8, index)));
-  for (const count of [0, 9, 10]) {
+  for (const count of [0, 1, 9, 10]) {
     const charts = getActivityCharts(records.slice(0, count), now);
-    assert.equal(charts.eligible, count >= 10);
+    assert.equal(charts.eligible, count > 0);
     assert.equal(charts.totalSessions, count);
-    assert.equal(charts.remainingToUnlock, Math.max(0, 10 - count));
+    assert.equal(charts.totalXp, getStats(records.slice(0, count), now).totalXp);
+    assert.equal(charts.remainingToUnlock, count === 0 ? 100 : 0);
     assert.deepEqual(charts.weekdays.map(bin => bin.label), ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
     assert.deepEqual(charts.weekdays.map(bin => bin.weekday), [1, 2, 3, 4, 5, 6, 7]);
     assert.equal(charts.hours.length, 24);
@@ -27,21 +27,39 @@ test('charts unlock on the tenth completed workout and retain every explicit zer
     assert.equal(charts.weekdays[2].count, count); assert.equal(charts.hours[8].count, count);
     assert.ok(charts.hours.filter(bin => bin.hour !== 8).every(bin => bin.count === 0));
   }
-  assert.equal(ACTIVITY_CHART_THRESHOLD, ACHIEVEMENT_DEFINITIONS.find(badge => badge.id === 'sessions-10')?.target);
-  assert.match(ACHIEVEMENT_DEFINITIONS.find(badge => badge.id === 'sessions-10')!.description, /unlock.*charts/i);
+  assert.equal(ACTIVITY_CHART_THRESHOLD, 100);
+  assert.deepEqual(getActivityCharts(records.slice(0, 1), now).xpTimeline, [{ date: '2026-10-07', earnedXp: 110, totalXp: 110 }]);
 });
-test('chart eligibility matches statistics: duplicates and future completions cannot unlock early', () => {
+test('chart eligibility and XP history ignore duplicate IDs and future completions', () => {
   const now = new Date(2026, 9, 8, 12);
   const past = Array.from({ length: 9 }, (_, index) => record(`past-${index}`, new Date(2026, 9, 7, 8, index)));
   const future = record('future', new Date(now.getTime() + 1000));
   const records = [...past, past[0], future];
+  assert.equal(getActivityCharts([future], now).eligible, false);
   const before = getActivityCharts(records, now);
-  assert.equal(before.eligible, false); assert.equal(before.totalSessions, 9);
+  assert.equal(before.eligible, true); assert.equal(before.totalSessions, 9);
   assert.equal(before.totalSessions, getStats(records, now).totalSessions);
+  assert.equal(before.totalXp, getStats(records, now).totalXp);
   const after = getActivityCharts(records, new Date(now.getTime() + 1000));
   assert.equal(after.eligible, true); assert.equal(after.totalSessions, 10);
+  assert.ok(after.totalXp > before.totalXp);
   assert.equal(sum(after.weekdays), 10); assert.equal(sum(after.hours), 10);
   assert.deepEqual(getActivityCharts(records.slice().reverse(), now), before);
+});
+test('cumulative XP groups awards by local day and stays flat across days without workouts', () => {
+  const records = [
+    record('first', new Date(2026, 9, 5, 12)),
+    record('second', new Date(2026, 9, 5, 14)),
+    record('third', new Date(2026, 9, 8, 12)),
+  ];
+  const charts = getActivityCharts(records, new Date(2026, 9, 13, 12));
+  assert.equal(charts.asOfDate, '2026-10-13');
+  assert.deepEqual(charts.xpTimeline, [
+    { date: '2026-10-05', earnedXp: 120, totalXp: 120 },
+    { date: '2026-10-08', earnedXp: 10, totalXp: 130 },
+  ]);
+  assert.equal(charts.totalXp, 130);
+  assert.equal(charts.totalXp, getStats(records, new Date(2026, 9, 13, 12)).totalXp);
 });
 test('weekday and hour both use local completedAt and can be recalculated when the timezone changes', () => {
   const oldTimezone = process.env.TZ;

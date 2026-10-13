@@ -47,11 +47,12 @@ test('mixed history preserves neck XP and routine-specific validation through ve
   assert.equal(parseImport(JSON.stringify(freshData())).settings.selectedRoutineId, 'level-1');
 });
 
-test('ten mixed workouts unlock shared charts while hands milestones count only hands history', () => {
+test('mixed workouts share charts after 100 XP while hands milestones count only hands history', () => {
   const neck = Array.from({ length: 5 }, (_, index) => finished(DEFAULT_ROUTINE, `neck-${index}`));
   const hands = Array.from({ length: 5 }, (_, index) => finished(HANDS_ROUTINE, `hands-${index}`));
   const records = [...neck, ...hands];
-  assert.equal(getActivityCharts(records.slice(0, 9), now).eligible, false);
+  assert.equal(getActivityCharts([], now).eligible, false);
+  assert.equal(getActivityCharts(records.slice(0, 9), now).eligible, true);
   const charts = getActivityCharts(records, now);
   assert.equal(charts.eligible, true); assert.equal(charts.totalSessions, 10);
   assert.equal(charts.hours.reduce((sum, hour) => sum + hour.count, 0), 10); assert.equal(charts.weekdays.reduce((sum, day) => sum + day.count, 0), 10);

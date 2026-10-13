@@ -1,6 +1,6 @@
 import type { Completion, WorkoutStats } from './types';
 import { completedHistory } from './history';
-import { ACHIEVEMENT_XP, getAchievements } from './achievements';
+import { getXpTimeline } from './xpTimeline';
 import { dayNumber, localDateKey } from './localDates';
 export { dayNumber, localDateKey } from './localDates';
 function localDay(year: number, month: number, day: number) {
@@ -14,12 +14,8 @@ export function getStats(records: Completion[], now = new Date(), month = now): 
     const key = localDateKey(new Date(item.completedAt));
     byDay.set(key, [...(byDay.get(key) ?? []), item]);
   }
-  const bonusByDay = new Map<string, number>();
-  for (const achievement of getAchievements(records, now)) {
-    if (!achievement.unlockedAt) continue;
-    const key = localDateKey(new Date(achievement.unlockedAt));
-    bonusByDay.set(key, (bonusByDay.get(key) ?? 0) + ACHIEVEMENT_XP);
-  }
+  const xpTimeline = getXpTimeline(records, now);
+  const xpByDay = new Map(xpTimeline.map(day => [day.date, day.earnedXp]));
   const today = localDateKey(now);
   const weekStart = dayOffset(now, -((now.getDay() + 6) % 7));
   const sevenStart = dayOffset(now, -6);
@@ -37,7 +33,7 @@ export function getStats(records: Completion[], now = new Date(), month = now): 
   const calendar = Array.from({ length: localDay(month.getFullYear(), month.getMonth() + 1, 0).getDate() }, (_, index) => {
     const date = localDateKey(localDay(month.getFullYear(), month.getMonth(), index + 1));
     const entries = byDay.get(date) ?? [];
-    return { date, count: entries.length, xp: entries.reduce((sum, entry) => sum + entry.xp, 0) + (bonusByDay.get(date) ?? 0), isToday: date === today };
+    return { date, count: entries.length, xp: xpByDay.get(date) ?? 0, isToday: date === today };
   });
-  return { totalSessions: records.length, totalXp: records.reduce((sum, item) => sum + item.xp, 0) + [...bonusByDay.values()].reduce((sum, bonus) => sum + bonus, 0), thisWeek: records.filter(item => new Date(item.completedAt) >= weekStart && new Date(item.completedAt) < end).length, lastSevenDays: records.filter(item => new Date(item.completedAt) >= sevenStart && new Date(item.completedAt) < end).length, thisMonth: records.filter(item => new Date(item.completedAt) >= monthStart && new Date(item.completedAt) < end).length, currentStreak, bestStreak, activeDays: byDay.size, calendar };
+  return { totalSessions: records.length, totalXp: xpTimeline.at(-1)?.totalXp ?? 0, thisWeek: records.filter(item => new Date(item.completedAt) >= weekStart && new Date(item.completedAt) < end).length, lastSevenDays: records.filter(item => new Date(item.completedAt) >= sevenStart && new Date(item.completedAt) < end).length, thisMonth: records.filter(item => new Date(item.completedAt) >= monthStart && new Date(item.completedAt) < end).length, currentStreak, bestStreak, activeDays: byDay.size, calendar };
 }
