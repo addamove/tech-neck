@@ -24,6 +24,8 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
+import { PREPARATION_OPTIONS } from './core/preparation';
+import type { PreparationSeconds } from './core/types';
 import { useWorkout } from "./core/useWorkout";
 import { readImport } from "./core/persistence";
 import { completedHistory } from "./core/history";
@@ -1083,6 +1085,12 @@ export default function App() {
                   )}
                 </SelectControl>
             </label>
+            <label className="speed-setting">
+              <span>Preparation time<small className="preparation-setting-note">Before each exercise · next workout</small></span>
+              <SelectControl aria-label="Preparation time" value={settings.preparationSeconds ?? 20} onChange={(event) => workout.updateSettings({ preparationSeconds: Number(event.target.value) as PreparationSeconds })}>
+                {PREPARATION_OPTIONS.map(seconds => <option key={seconds} value={seconds}>{seconds} seconds</option>)}
+              </SelectControl>
+            </label>
             <Toggle
               checked={settings.wakeLockEnabled}
               onChange={() =>
@@ -1168,7 +1176,7 @@ export default function App() {
           <button className="text-button about-link" onClick={openAbout}>
             About Tech Neck <Info size={15} />
           </button>
-          <small className="version-label">TECH NECK · VERSION 1.0</small>
+          <small className="version-label">TECH NECK · {__APP_VERSION__} <span>{__APP_REVISION__}</span></small>
         </main>
       )}
       {(!activeScreen || finishScreen) && (

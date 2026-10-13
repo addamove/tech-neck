@@ -26,14 +26,15 @@ test('side-neck repeats seven-plus-two independently per side and switches direc
 test('side-neck voice rests align with each side cycle and announces the right side at 25 without a rest collision', () => {
   const timeline = cueTimeline(side);
   assert.deepEqual(timeline.filter(cue => cue.text === 'Rest for two seconds.').map(cue => cue.atSeconds), [7, 16, 32, 41]);
-  assert.deepEqual(timeline.filter(cue => cue.text === 'Gently return to the stretch.').map(cue => cue.atSeconds), [9, 18, 34, 43]);
+  assert.deepEqual(timeline.filter(cue => cue.text === 'Gently return to the stretch.').map(cue => cue.atSeconds), []);
   assert.deepEqual(timeline.filter(cue => cue.text === 'Switch to your right side.').map(cue => cue.atSeconds), [25]);
   assert.ok(timeline[0].text.startsWith('Start on your left side.'));
   assert.equal(timeline[0].atSeconds, 0);
   assert.equal(new Set(timeline.map(cue => cue.atSeconds)).size, timeline.length);
   assert.ok(timeline.every(cue => cue.atSeconds < 50));
   for (const cue of timeline.filter(cue => cue.text === 'Rest for two seconds.')) {
-    assert.equal(timeline.find(next => next.atSeconds > cue.atSeconds)!.atSeconds - cue.atSeconds, 2);
+    assert.equal(getPose(side, cue.atSeconds).isRest, true);
+    assert.equal(Boolean(getPose(side, cue.atSeconds + 2).isRest), false);
   }
 });
 test('side-neck rest freezes on pause and finishes into the next preparation at exactly 50 seconds', () => {

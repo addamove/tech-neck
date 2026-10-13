@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -16,7 +18,11 @@ export default defineConfig(({ mode }) => {
       "VITE_BASE_PATH must be a local path such as / or /tech-neck/.",
     );
   }
+  const version = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version;
+  let revision = 'unknown';
+  try { revision = execFileSync('git', ['rev-parse', '--short=10', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { /* Source archives may not contain Git metadata. */ }
   return {
+    define: { __APP_VERSION__: JSON.stringify(version), __APP_REVISION__: JSON.stringify(revision) },
     base,
     plugins: [
       react(),

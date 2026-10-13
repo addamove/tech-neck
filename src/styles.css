@@ -2051,3 +2051,12 @@ svg {
 .exercises-settings-section { margin-top: 30px; }
 .exercises-settings-link { color: var(--deep); font: inherit; text-decoration: none; }
 .exercises-settings-description { font-size: 11px; color: var(--muted); line-height: 1.6; margin: 9px 0 14px; }
+
+.preparation-setting-note {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.version-label span { font-family: monospace; margin-left: 4px; }

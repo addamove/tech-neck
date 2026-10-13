@@ -1,3 +1,4 @@
+import { isPreparationSeconds } from './preparation';
 import { rememberRoutineSelection } from './routineFamilies';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ROUTINES, getRoutine, getSelectedRoutine, getSessionRoutine } from './config';
@@ -153,6 +154,7 @@ export function useWorkout(options: { routineId?: string } = {}) {
   }, []);
   const stop = useCallback(() => { speakerRef.current?.cancel(); setData(previous => ({ ...previous, session: null })); }, []);
   const updateSettings = useCallback((settings: Partial<Settings>) => {
+    if (settings.preparationSeconds !== undefined && !isPreparationSeconds(settings.preparationSeconds)) return;
     if (settings.voiceEnabled === false) speakerRef.current?.cancel();
     const changesGender = settings.voiceGender !== undefined && settings.voiceGender !== dataRef.current.settings.voiceGender;
     if (settings.voiceGender !== undefined) preferredGender.current = settings.voiceGender;

@@ -1,4 +1,5 @@
 import type { AppData, Exercise, PoseStep, Routine, VoiceCue } from './types';
+import { withPreparation, DEFAULT_PREPARATION_SECONDS } from './preparation';
 import { HANDS_ROUTINE } from './handsRoutine';
 export { HANDS_ROUTINE, HANDS_TIMING } from './handsRoutine';
 
@@ -43,7 +44,7 @@ const sideNeckCues: VoiceCue[] = sideNeckPoses.flatMap((pose, index) => {
     rightSideAnnounced = true;
     return [{ atSeconds, text: 'Switch to your right side.' }];
   }
-  return [{ atSeconds, text: 'Gently return to the stretch.' }];
+  return [];
 });
 const exercises: Exercise[] = [
   {
@@ -71,7 +72,7 @@ const exercises: Exercise[] = [
     id: 'back-neck', title: 'Stretch the back of your neck', durationSeconds: 30, prepSeconds: 20, prepPoseId: 'back-neck-stretch',
     description: 'Tilt your chin to your chest. Interlace your fingers and place them behind your head. Allow the weight of your arms to apply gentle downward pressure on your head and stretch the back of your neck.',
     poses: [{ poseId: 'back-neck-stretch', seconds: 10, label: 'Let the weight of your arms stretch your neck' }, { poseId: 'back-neck-stretch', seconds: 2, label: 'Rest for two seconds', isRest: true }],
-    cues: [{ atSeconds: 0, text: gentleWeight }, { atSeconds: 10, text: 'Rest for two seconds.', repeatEverySeconds: 12 }, { atSeconds: 12, text: 'Gently return to the stretch.', repeatEverySeconds: 12 }],
+    cues: [{ atSeconds: 0, text: gentleWeight }, { atSeconds: 10, text: 'Rest for two seconds.', repeatEverySeconds: 12 }],
   },
   {
     id: 'side-neck', title: 'Stretch sides of your neck', durationSeconds: SIDE_NECK_TIMING.duration, prepSeconds: 20, prepPoseId: 'side-neck-left',
@@ -94,9 +95,9 @@ function longerSideNeck(): Pick<Exercise, 'poses' | 'cues'> {
     poses.push({ poseId: `side-neck-${side}`, seconds, isRest: rest, label: rest ? 'Rest for two seconds' : `${side === 'left' ? 'Left' : 'Right'} side` }); at += seconds;
   }
   let at = 0;
-  const cues = poses.map((pose, index) => {
-    const cue = { atSeconds: at, text: index === 0 ? 'Start on your left side. Allow the weight of your arm to provide a gentle stretch. Do not press down.' : at === 34 ? 'Switch to your right side.' : pose.isRest ? 'Rest for two seconds.' : 'Gently return to the stretch.' };
-    at += pose.seconds; return cue;
+  const cues = poses.flatMap((pose, index) => {
+    const cue = { atSeconds: at, text: index === 0 ? 'Start on your left side. Allow the weight of your arm to provide a gentle stretch. Do not press down.' : at === 34 ? 'Switch to your right side.' : pose.isRest ? 'Rest for two seconds.' : '' };
+    at += pose.seconds; return cue.text ? [cue] : [];
   });
   return { poses, cues };
 }
@@ -125,7 +126,7 @@ export const ROUTINES: Routine[] = [{ family: 'neck', id: 'level-1', title: 'Tec
 export const DEFAULT_ROUTINE = ROUTINES[0];
 export const DEFAULT_DATA: AppData = {
   format: 'tech-neck', version: 1,
-  settings: { voiceEnabled: true, voiceRate: 1, voiceGender: 'female', illustrationStyle: 'male', wakeLockEnabled: true, selectedRoutineId: DEFAULT_ROUTINE.id, disabledExerciseIds: {} },
+  settings: { preparationSeconds: DEFAULT_PREPARATION_SECONDS, voiceEnabled: true, voiceRate: 1, voiceGender: 'female', illustrationStyle: 'male', wakeLockEnabled: true, selectedRoutineId: DEFAULT_ROUTINE.id, disabledExerciseIds: {} },
   completions: [], session: null,
 };
 export const getRoutine = (id: string) => ROUTINES.find(r => r.id === id) ?? DEFAULT_ROUTINE;
@@ -134,11 +135,11 @@ export function selectRoutineExercises(routine: Routine, disabledIds: string[] =
   const selected = routine.exercises.filter(exercise => !disabledIds.includes(exercise.id));
   return { ...routine, exercises: selected.length ? selected : [routine.exercises[0]] };
 }
-export function getSelectedRoutine(routineId: string, settings: Pick<import('./types').Settings, 'disabledExerciseIds'>): Routine {
+export function getSelectedRoutine(routineId: string, settings: Pick<import('./types').Settings, 'disabledExerciseIds' | 'preparationSeconds'>): Routine {
   const routine = getRoutine(routineId);
-  return selectRoutineExercises(routine, settings.disabledExerciseIds?.[routine.id]);
+  return withPreparation(selectRoutineExercises(routine, settings.disabledExerciseIds?.[routine.id]), settings.preparationSeconds ?? DEFAULT_PREPARATION_SECONDS);
 }
 export function getSessionRoutine(session: import('./types').Session): Routine {
-  const routine = getRoutine(session.routineId);
+  const routine = withPreparation(getRoutine(session.routineId), session.preparationSeconds);
   return session.exerciseIds ? { ...routine, exercises: session.exerciseIds.map(id => routine.exercises.find(exercise => exercise.id === id)!).filter(Boolean) } : routine;
 }

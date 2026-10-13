@@ -1,12 +1,14 @@
+import { withPreparation } from './preparation';
 import type { Completion, Exercise, Routine, Session, VoiceCue, WorkoutFrame } from './types';
 
 function sessionRoutine(session: Session | null, routine: Routine): Routine {
+  routine = withPreparation(routine, session?.preparationSeconds);
   return session?.exerciseIds ? { ...routine, exercises: session.exerciseIds.map(id => routine.exercises.find(exercise => exercise.id === id)!).filter(Boolean) } : routine;
 }
 
 export function createSession(routine: Routine, id: string, now = new Date()): Session {
   if (!routine.exercises.length) throw new Error('A workout must include at least one exercise.');
-  return { exerciseIds: routine.exercises.map(exercise => exercise.id), id, routineId: routine.id, startedAt: now.toISOString(), phase: 'prep', exerciseIndex: 0, phaseElapsedMs: 0, elapsedMs: 0, paused: false, skippedExerciseIds: [], completedExerciseIds: [] };
+  return { ...(routine.preparationSeconds === undefined ? {} : { preparationSeconds: routine.preparationSeconds }), exerciseIds: routine.exercises.map(exercise => exercise.id), id, routineId: routine.id, startedAt: now.toISOString(), phase: 'prep', exerciseIndex: 0, phaseElapsedMs: 0, elapsedMs: 0, paused: false, skippedExerciseIds: [], completedExerciseIds: [] };
 }
 function nextExercise(session: Session, routine: Routine): Session {
   return session.exerciseIndex + 1 >= routine.exercises.length
@@ -76,7 +78,7 @@ export function completionFor(session: Session, routine: Routine, now = new Date
   const ids = session.exerciseIds ?? routine.exercises.map(exercise => exercise.id);
   const progressed = [...session.completedExerciseIds, ...session.skippedExerciseIds];
   if (!ids.length || new Set(ids).size !== ids.length || ids.some(id => !routine.exercises.some(exercise => exercise.id === id)) || progressed.length !== ids.length || new Set(progressed).size !== ids.length || progressed.some(id => !ids.includes(id))) throw new Error('Completed workout exercise progress is inconsistent.');
-  return { ...(session.exerciseIds ? { exerciseIds: [...session.exerciseIds] } : {}), id: session.id, routineId: session.routineId, startedAt: session.startedAt, completedAt: now.toISOString(), elapsedMs: session.elapsedMs, xp: routine.xp, skippedExerciseIds: session.skippedExerciseIds, completedExerciseIds: session.completedExerciseIds };
+  return { ...(session.preparationSeconds === undefined ? {} : { preparationSeconds: session.preparationSeconds }), ...(session.exerciseIds ? { exerciseIds: [...session.exerciseIds] } : {}), id: session.id, routineId: session.routineId, startedAt: session.startedAt, completedAt: now.toISOString(), elapsedMs: session.elapsedMs, xp: routine.xp, skippedExerciseIds: session.skippedExerciseIds, completedExerciseIds: session.completedExerciseIds };
 }
 export function recordCompletion(records: Completion[], completion: Completion): Completion[] {
   return records.some(record => record.id === completion.id) ? records : [...records, completion];
