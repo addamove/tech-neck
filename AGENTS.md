@@ -7,3 +7,5 @@
 - Maintain both English neural voices. Keep speech at or below 1.5x, avoid overlapping cues, and preserve the preparation countdown and Start cue.
 - Keep durations and movement intervals configurable in core configuration. Preserve wake lock support, local storage, and backward-compatible JSON export/import.
 - Complete and verify the feature before committing and pushing. Follow the user's current authorization for publishing.
+
+- Eye Gym is marker-only regardless of the selected illustration style. Keep its active duration at 180 seconds (30 blinking + 60 distance/rest + 30 circles + 60 palming); preparation is additional. Keep research limitations in docs/eye-gym.md.

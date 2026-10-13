@@ -2060,3 +2060,81 @@ svg {
   color: var(--muted);
 }
 .version-label span { font-family: monospace; margin-left: 4px; }
+
+/* Eye Gym: a cooler sky-cyan family, including controls and activity. */
+.app-shell[data-theme="eyes"] {
+  --teal: #65bfd8;
+  --deep: #277e9f;
+  --header-fill: #b2deed;
+  --header-ink: #173944;
+  --header-icon-bg: #ffffff40;
+  --hero-accent: #58a8c6;
+  --light: #edf8fc;
+  --muted: #73858c;
+  --focus: #214e61;
+  --carousel-arrow: #68a9c1;
+  --back-fill: #d9f0f8;
+  --back-ink: #254b5b;
+  --nav-fill: #eaf6fc;
+  --nav-border: #e1edf4;
+  --divider: #e9f0f4;
+  --control-tint: #eef8fc;
+  --control-tint-soft: #f2f9fc;
+  --panel-tint: #eef8fc;
+  --round-fill: #4ca8c6;
+  --button-fill: #338bad;
+  --on-accent: #fff;
+  --progress-track: #e5f3f9;
+  --completion-fill: #e7f6fc;
+  --completion-border: #c0e4f3;
+  --completion-halo: #f4fbfe;
+  --soft-border: #e1eef5;
+  --chart-bg: #fcfeff;
+  --chart-grid: #e4eef5;
+  --chart-bar: #69b8d5;
+  --chart-line: #348dad;
+  --badge-border: #e3edf4;
+  --badge-earned-border: #b4dce9;
+  --badge-earned-fill: #eff9fc;
+  --locked-fill: #eef3f6;
+  --badge-progress-track: #eaf2f7;
+  --badge-progress: #9fcbdc;
+  --segmented-border: #e2edf4;
+  --segmented-bg: #f1f7fa;
+  --nav-shadow: #19445b1a;
+  --nav-shadow-close: #19445b08;
+  --selected-shadow: #19445b0d;
+  --dialog-shadow: #19445b22;
+  --shell-shadow: #19445b10;
+}
+.routine-card[data-routine="eye-gym"],
+.routine-backlight-card[data-routine="eye-gym"] {
+  --teal: #65bfd8;
+  --deep: #277e9f;
+  --control-tint: #eef8fc;
+  --play-icon: #5bbbd9;
+  --play-shadow: #2983ad0d;
+  --play-glow: #a9dff388;
+  --play-press-glow: #96d7ee99;
+  --play-halo-one: #6dc9e588;
+  --play-halo-two: #b8e2fa66;
+  --play-halo-three: #8bccf080;
+  --play-halo-four: #b5f1f066;
+}
+.home-screen[data-routine="eye-gym"] {
+  --wave-back-one: #ceeaf8;
+  --wave-back-two: #a9deef;
+  --wave-back-three: #88cfe4;
+  --wave-front-one: #a8ddee;
+  --wave-front-two: #73bddb;
+  --wave-front-three: #b7e8f5;
+}
+.eye-art {
+  position: relative;
+  width: min(100%, 330px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+}
+.eye-art > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.eye-direction { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.exercise-thumbnail .eye-art { width: 100%; }

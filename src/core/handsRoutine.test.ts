@@ -17,7 +17,7 @@ function finished(routine: Routine, id: string, date = new Date('2027-01-01T12:0
 }
 
 test('hands routine has five six-cycle movements: 180 active seconds, 75 preparation and five XP', () => {
-  assert.equal(ROUTINES.length, 3); assert.equal(HANDS_ROUTINE.id, 'hands-level-1'); assert.equal(HANDS_ROUTINE.xp, 5);
+  assert.ok(ROUTINES.some(routine => routine.id === HANDS_ROUTINE.id)); assert.equal(HANDS_ROUTINE.id, 'hands-level-1'); assert.equal(HANDS_ROUTINE.xp, 5);
   assert.deepEqual(HANDS_ROUTINE.exercises.map(exercise => exercise.id), ['hands-spread', 'hands-bends', 'hands-wrist-bends', 'hands-palm-turns', 'hands-wrist-sides']);
   assert.equal(getFrame(null, HANDS_ROUTINE).workRemainingSeconds, 180); assert.equal(getFrame(null, HANDS_ROUTINE).totalRemainingSeconds, 255);
   for (const exercise of HANDS_ROUTINE.exercises) {

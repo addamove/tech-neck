@@ -1,3 +1,4 @@
+import EyeArt from './EyeArt';
 import type { IllustrationStyle } from "../core/types";
 import { publicAssetUrl } from "../core/assets";
 import HandsArt from './HandsArt';
@@ -322,6 +323,7 @@ export default function ExerciseArt({
   isRest?: boolean;
   illustrationStyle?: IllustrationStyle;
 }) {
+  if (poseId.startsWith('eyes-')) return <EyeArt poseId={poseId} title={title} />;
   if (poseId.startsWith('hands-')) {
     return <HandsArt poseId={poseId} title={title} isRest={isRest} illustrationStyle={illustrationStyle} />;
   }

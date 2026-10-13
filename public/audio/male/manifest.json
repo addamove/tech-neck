@@ -170,5 +170,65 @@
   "Reverse direction. Keep the circular swings slow and comfortable.": {
     "src": "/audio/male/c31b1da3825e8f6c.mp3",
     "duration": 3.804375
+  },
+  "Keep your eyes open for two seconds, closed for two seconds, then gently squeeze for two seconds without wrinkling the outer corners. Repeat softly, keeping your face relaxed.": {
+    "src": "/audio/male/fc77e63ef37a71a6.mp3",
+    "duration": 10.00475
+  },
+  "Open.": {
+    "src": "/audio/male/849cbb8b9ec0b1f3.mp3",
+    "duration": 0.315875
+  },
+  "Close.": {
+    "src": "/audio/male/0d26542a2378c602.mp3",
+    "duration": 0.442292
+  },
+  "Gently squeeze.": {
+    "src": "/audio/male/a9399c918c5e25cf.mp3",
+    "duration": 0.812125
+  },
+  "Look at an object about twenty feet, or six metres, away for twenty seconds. Then gently close your eyes for ten seconds. Repeat twice. Follow the voice without watching the screen.": {
+    "src": "/audio/male/e0f1e9da56dae13d.mp3",
+    "duration": 10.802333
+  },
+  "Look away at an object about six metres away. Blink naturally.": {
+    "src": "/audio/male/c8d530eb93ff4738.mp3",
+    "duration": 3.50675
+  },
+  "Gently close your eyes for ten seconds.": {
+    "src": "/audio/male/13895c9feb062112.mp3",
+    "duration": 1.969958
+  },
+  "Open your eyes and look into the distance.": {
+    "src": "/audio/male/c82006321d21e402.mp3",
+    "duration": 2.050417
+  },
+  "Keep your head still. Slowly trace a small, comfortable circle with your eyes. Change direction after fifteen seconds. Do not force your gaze to the edges. Stop if you feel discomfort or dizziness.": {
+    "src": "/audio/male/f57796ecffb73483.mp3",
+    "duration": 11.339958
+  },
+  "Circle your gaze slowly clockwise. Keep your head still and do not strain.": {
+    "src": "/audio/male/79a8eb2638450077.mp3",
+    "duration": 4.327708
+  },
+  "Change direction. Keep the circles small, slow and comfortable.": {
+    "src": "/audio/male/cbff49b90ba658b9.mp3",
+    "duration": 3.578417
+  },
+  "Support your elbows and close your eyes. Cup clean hands loosely over them to block the light, without touching or pressing on your eyeballs. Breathe normally. You can also rest with your eyes closed and hands down.": {
+    "src": "/audio/male/af010e7df625f42f.mp3",
+    "duration": 11.764625
+  },
+  "Close your eyes. Cup your hands loosely, with no pressure on your eyes.": {
+    "src": "/audio/male/338f0c3fa929fbc2.mp3",
+    "duration": 3.848
+  },
+  "Relax your shoulders. Breathe normally.": {
+    "src": "/audio/male/67cbd93e02977cd3.mp3",
+    "duration": 2.107
+  },
+  "Finish gently. Lower your hands and open your eyes.": {
+    "src": "/audio/male/43a44e9ffc93b8e3.mp3",
+    "duration": 2.988333
   }
 }

@@ -215,7 +215,8 @@ export default function App() {
     !showAbout && !showExercises && showWorkout && session && frame && exercise;
   const finishScreen = activeScreen && session.phase === "complete";
   const handsTheme = (activeScreen ? routine : selectedRoutine).id === "hands-level-1";
-  const brandName = handsTheme ? "wrist fix" : "tech neck";
+  const eyesTheme = (activeScreen ? routine : selectedRoutine).family === "eyes";
+  const brandName = eyesTheme ? "eye gym" : handsTheme ? "wrist fix" : "tech neck";
   // Preview poses without advancing the exercise or scheduling active cues.
   // Doorway preparation keeps its initial pose; other demos freeze on pause.
   const preparationPoses = exercise.poses.filter(
@@ -257,6 +258,7 @@ export default function App() {
   const savedRoutine = savedWorkout ? getRoutine(savedWorkout.routineId) : null;
   const selectedIsSaved = savedWorkout?.routineId === selectedRoutine.id;
   const isHandsRoutine = routine.id === "hands-level-1";
+  const isEyeRoutine = routine.family === "eyes";
   const resumeExistingWorkout = () => {
     if (homeLaunchGuard.current) return;
     homeLaunchGuard.current = true;
@@ -511,7 +513,7 @@ export default function App() {
         <p>Tech Neck currently supports mobile screen sizes only. Open it on your phone or use a narrower window.</p>
       </div>
     </main>
-    <div className={`app-shell ${activeScreen ? "session-shell" : ""}`} data-theme={handsTheme ? "hands" : "neck"}>
+    <div className={`app-shell ${activeScreen ? "session-shell" : ""}`} data-theme={eyesTheme ? "eyes" : handsTheme ? "hands" : "neck"}>
       <header className="topbar">
         {showAbout || showExercises ? (
           <>
@@ -522,7 +524,7 @@ export default function App() {
             <button
               type="button"
               className="brand-mark"
-              aria-label={`${handsTheme ? "Wrist Fix" : "Tech Neck"} home`}
+              aria-label={`${brandName} home`}
               onClick={() => navigateToTab("train")}
             >
               <span className="brand-dot" />
@@ -535,7 +537,7 @@ export default function App() {
               <ArrowLeft size={17} />
               Back
             </button>
-            <span className="header-label">{isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
+            <span className="header-label">{isEyeRoutine ? "EYE GYM · LEVEL 1" : isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
             <button
               className="top-icon"
               aria-label={
@@ -559,7 +561,7 @@ export default function App() {
             <button
               type="button"
               className="brand-mark"
-              aria-label={`${handsTheme ? "Wrist Fix" : "Tech Neck"} home`}
+              aria-label={`${brandName} home`}
               onClick={() => {
                 setTab("train");
                 window.scrollTo(0, 0);
@@ -568,7 +570,7 @@ export default function App() {
               <span className="brand-dot" />
               {brandName}
             </button>
-            {!handsTheme && <button
+            {!handsTheme && !eyesTheme && <button
               className="top-icon"
               aria-label="About Tech Neck"
               onClick={openAbout}
@@ -595,13 +597,13 @@ export default function App() {
             </div>
             <span className="eyebrow">DAILY RESET COMPLETE</span>
             <h1>
-              {isHandsRoutine ? "Small movements." : "A little taller."}
-              <br />{isHandsRoutine ? "Time for yourself." : "A little lighter."}
+              {isEyeRoutine ? "A moment of rest." : isHandsRoutine ? "Small movements." : "A little taller."}
+              <br />{isEyeRoutine ? "Back to your day." : isHandsRoutine ? "Time for yourself." : "A little lighter."}
             </h1>
             <p>
               You made time for yourself.
               <br />
-              {isHandsRoutine ? "Keep your hands relaxed and comfortable." : "Keep that good posture with you."}
+              {isEyeRoutine ? "Keep taking regular screen breaks." : isHandsRoutine ? "Keep your hands relaxed and comfortable." : "Keep that good posture with you."}
             </p>
             <div className="earned-xp">
               <Sparkles size={19} /> +{routine.xp} XP
@@ -681,6 +683,7 @@ export default function App() {
             )}
             <h1 className="exercise-title">{exercise.title}</h1>
             <p className="exercise-description">{exercise.description}</p>
+            {isEyeRoutine && <p className="movement-comfort">Follow the voice and look away from the screen. Stop if you feel discomfort or dizziness.</p>}
             {isHandsRoutine && <p className="movement-comfort">Move within a comfortable range. Stop if pain, tingling or numbness increases.</p>}
             {frame.phase === "prep" ? (
               <div className="prep-actions">
@@ -788,7 +791,7 @@ export default function App() {
               <span>feel better.</span>
             </h1>
             <p>
-              A few minutes for your {selectedRoutine.id === "hands-level-1" ? "hands and wrists" : "neck"}.
+              A few minutes for your {selectedRoutine.family === "eyes" ? "eyes" : selectedRoutine.id === "hands-level-1" ? "hands and wrists" : "neck"}.
               <br />A fresh start for the rest of your day.
             </p>
           </div>
@@ -827,7 +830,7 @@ export default function App() {
                     {cardRoutine.exercises.length} exercises <span>·</span>{" "}
                     {(() => {
                       const seconds = cardRoutine.exercises.reduce((sum, item) => sum + item.durationSeconds, 0);
-                      return seconds % 60 === 0 ? `${seconds / 60} min movement` : `${formatTime(seconds)} movement`;
+                      return `${seconds % 60 === 0 ? `${seconds / 60} min` : formatTime(seconds)} ${cardRoutine.family === "eyes" ? "eye break" : "movement"}`;
                     })()}
                     <span>·</span> +{cardRoutine.xp} XP
                   </span>
@@ -1015,7 +1018,7 @@ export default function App() {
               ))}
             </div>
             <small className="achievement-note">
-              Milestones celebrate your progress. Tech Neck earns 10 XP; Hands earns 5 XP.
+              Milestones celebrate your progress. Tech Neck earns 10 XP; Hands and Eye Gym earn 5 XP.
             </small>
           </section>
         </main>
@@ -1108,7 +1111,7 @@ export default function App() {
           </section>
           <section className="illustration-section">
             <h2>Illustrations</h2>
-            <p>Choose the look of your exercise guide.</p>
+            <p>{eyesTheme ? "Eye Gym uses marker sketches. This choice applies to Neck and Hands." : "Choose the look of your exercise guide."}</p>
             <fieldset className="illustration-options">
               <legend className="sr-only">Illustration style</legend>
               {(
