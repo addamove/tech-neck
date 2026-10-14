@@ -139,6 +139,8 @@ export default function App() {
   } = workout;
   const [tab, setTab] = useState<Tab>("train");
   const [showWorkout, setShowWorkout] = useState(false);
+  const [showReleaseInfo, setShowReleaseInfo] = useState(false);
+  const resumeAfterReleaseInfo = useRef(false);
   const [showAbout, setShowAbout] = useState(
     () => window.location.hash === "#/about",
   );
@@ -220,6 +222,23 @@ export default function App() {
   const nightTheme = (activeScreen ? routine : selectedRoutine).family === "night";
   const backTheme = (activeScreen ? routine : selectedRoutine).family === "back";
   const brandName = backTheme ? "back care" : nightTheme ? "night stretch" : eyesTheme ? "eye gym" : handsTheme ? "wrist fix" : "tech neck";
+  const releaseStatus = backTheme ? "early alpha" : nightTheme ? "alpha" : eyesTheme || handsTheme ? "beta" : null;
+  const closeReleaseInfo = () => {
+    setShowReleaseInfo(false);
+    if (resumeAfterReleaseInfo.current && session && session.phase !== "complete") workout.resume();
+    resumeAfterReleaseInfo.current = false;
+  };
+  const releaseChip = releaseStatus && <button
+    type="button"
+    className="release-chip"
+    aria-label={`${brandName} ${releaseStatus}: testing status`}
+    aria-haspopup="dialog"
+    onClick={() => {
+      resumeAfterReleaseInfo.current = Boolean(activeScreen && session && !session.paused && session.phase !== "complete");
+      if (resumeAfterReleaseInfo.current) workout.pause();
+      setShowReleaseInfo(true);
+    }}
+  >{releaseStatus}</button>;
   // Preview poses without advancing the exercise or scheduling active cues.
   // Mirrored-side and doorway exercises keep their initial preparation pose.
   const preparationPoses = exercise.poses.filter(
@@ -526,15 +545,18 @@ export default function App() {
               <ArrowLeft size={17} />
               Back
             </button>
-            <button
-              type="button"
-              className="brand-mark"
-              aria-label={`${brandName} home`}
-              onClick={() => navigateToTab("train")}
-            >
-              <span className="brand-dot" />
-              {brandName}
-            </button>
+            <div className="header-brand-group">
+              <button
+                type="button"
+                className="brand-mark"
+                aria-label={`${brandName} home`}
+                onClick={() => navigateToTab("train")}
+              >
+                <span className="brand-dot" />
+                {brandName}
+              </button>
+              {releaseChip}
+            </div>
           </>
         ) : activeScreen ? (
           <>
@@ -542,7 +564,10 @@ export default function App() {
               <ArrowLeft size={17} />
               Back
             </button>
-            <span className="header-label">{isEyeRoutine || isNightRoutine || isBackRoutine ? routine.title.toUpperCase() : isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
+            <div className="workout-header-title">
+              <span className="header-label">{isEyeRoutine || isNightRoutine || isBackRoutine ? routine.title.toUpperCase() : isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
+              {releaseChip}
+            </div>
             <button
               className="top-icon"
               aria-label={
@@ -563,18 +588,21 @@ export default function App() {
           </>
         ) : (
           <>
-            <button
-              type="button"
-              className="brand-mark"
-              aria-label={`${brandName} home`}
-              onClick={() => {
-                setTab("train");
-                window.scrollTo(0, 0);
-              }}
-            >
-              <span className="brand-dot" />
-              {brandName}
-            </button>
+            <div className="header-brand-group">
+              <button
+                type="button"
+                className="brand-mark"
+                aria-label={`${brandName} home`}
+                onClick={() => {
+                  setTab("train");
+                  window.scrollTo(0, 0);
+                }}
+              >
+                <span className="brand-dot" />
+                {brandName}
+              </button>
+              {releaseChip}
+            </div>
             {!handsTheme && !eyesTheme && !nightTheme && !backTheme && <button
               className="top-icon"
               aria-label="About Tech Neck"
@@ -1337,6 +1365,12 @@ export default function App() {
             Keep going
             <Check size={17} />
           </button>
+        </Modal>
+      )}
+      {showReleaseInfo && (
+        <Modal title={`${brandName} · ${releaseStatus}`} onClose={closeReleaseInfo}>
+          <p>Be cautious — not tested at all!</p>
+          <button className="primary-button" onClick={closeReleaseInfo}>Got it</button>
         </Modal>
       )}
       {dialog === "exit" && (
