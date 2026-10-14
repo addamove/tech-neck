@@ -9,9 +9,9 @@ const sideRepetitions = (base: string, secondsPerSide = 20): PoseStep[] => ['lef
 // Brochure movement numbers are kept in docs/back-care.md, not embedded in IDs.
 export const BACK_EXERCISES: Exercise[] = [
   exercise('warmup', 'Reach and draw knees in', 40,
-    'Lie on your back with your head resting. Reach your arms overhead and lengthen comfortably. Bend your knees and hold behind your thighs, drawing them towards your chest. Release slowly and repeat without forcing your back.',
+    'Lie on your back. Reach your arms overhead comfortably and keep them resting. Slowly bend both knees towards your chest, then lower and extend your legs. Keep your head, shoulders and hips resting throughout. Move gently without forcing your back.',
     [pose('reach', 5, 'Lengthen comfortably'), pose('knees', 5, 'Draw your knees in gently')],
-    [cue(0, 'Reach comfortably, then draw your knees towards your chest. Repeat slowly.'), cue(20, 'Keep your head supported and your breathing easy.')]),
+    [cue(0, 'Keep your arms resting overhead. Slowly draw your knees in, then lower and extend your legs.'), cue(20, 'Keep your head supported and your breathing easy.')]),
   exercise('roller-curl', 'Supported back curl', 40,
     'Lie back with a small soft roll supporting your lower back. Hold behind your knees and draw your thighs towards your chest. Gently lift your head and shoulders towards your knees, then ease back. Keep the movement small and never pull on your neck.',
     [pose('roller-curl-down', 5, 'Head supported · breathe in'), pose('roller-curl-up', 5, 'Curl gently · breathe out')],

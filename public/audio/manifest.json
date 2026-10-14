@@ -546,5 +546,13 @@
   "Keep your eyes closed. Circle slowly clockwise, with your head still and no strain.": {
     "src": "/audio/fa7e0c3826e3b6cb.mp3",
     "duration": 5.17325
+  },
+  "Lie on your back. Reach your arms overhead comfortably and keep them resting. Slowly bend both knees towards your chest, then lower and extend your legs. Keep your head, shoulders and hips resting throughout. Move gently without forcing your back.": {
+    "src": "/audio/470ea7923e04bc90.mp3",
+    "duration": 15.905667
+  },
+  "Keep your arms resting overhead. Slowly draw your knees in, then lower and extend your legs.": {
+    "src": "/audio/c971bf0e6ec82e79.mp3",
+    "duration": 5.556875
   }
 }

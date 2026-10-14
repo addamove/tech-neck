@@ -6,7 +6,8 @@ import { resolve } from 'node:path';
 // Supply the nine original sheets in A/B/C order, each male/female/marker.
 const sources = process.argv.slice(2,11);
 const correctedCross = process.argv[11];
-if (sources.length !== 9 || !correctedCross) throw new Error('Pass nine A/B/C sheets, then the corrected marker cross-body pair.');
+const warmups = process.argv.slice(12,15);
+if (sources.length !== 9 || !correctedCross || warmups.length !== 3) throw new Error('Pass nine A/B/C sheets, corrected marker cross-body pair, then aligned warmup pairs (male/female/marker).');
 const names = [
   ['reach','figure','prone-down','prone-up','side-down','side-up'],
   ['roller-curl-down','roller-curl-up','block-curl-down','block-curl-up','roller-fold','roller-upright'],
@@ -64,6 +65,21 @@ for(const [pose,top] of [['cross-down',0],['cross-up',610]]) {
   if(!(await sharp(crop).ensureAlpha().raw().toBuffer()).equals(await sharp(compressed).ensureAlpha().raw().toBuffer())) throw new Error('Corrected marker pixels changed');
   await writeFile(resolve(`public/art/back/marker/${pose}.webp`),compressed);
   Object.assign(report.find(item=>item.style==='marker'&&item.pose===pose),{pngBytes:crop.length,webpBytes:compressed.length});
+}
+// Upper-body pixel registration: matched head/shoulder/hand anchors, no scaling.
+// Keep identical canvases: only the legs change between reach and knees.
+for (const [styleIndex, label] of styles.entries()) {
+  const source=warmups[styleIndex];
+  const saved=resolve(archive, `${label}-warmup-v2.png`);
+  if(resolve(source)!==saved) await copyFile(source,saved);
+  const tops=[[180,751],[230,751],[110,683]][styleIndex];
+  for(const [index,name] of ['reach','knees'].entries()) {
+    const crop=await sharp(source).extract({left:0,top:tops[index],width:1254,height:480}).png().toBuffer();
+    const webp=await sharp(crop).webp(label==='marker'?{lossless:true,effort:6}:{quality:85,effort:6}).toBuffer();
+    if(label==='marker'&&!(await sharp(crop).ensureAlpha().raw().toBuffer()).equals(await sharp(webp).ensureAlpha().raw().toBuffer())) throw new Error('Warmup marker pixels changed');
+    await writeFile(resolve(`public/art/back/${label}/${name}.webp`),webp);
+    Object.assign(report.find(item=>item.style===label&&item.pose===name),{pngBytes:crop.length,webpBytes:webp.length});
+  }
 }
 await writeFile(resolve(archive,'compression.json'),JSON.stringify(report,null,2));
 console.log(JSON.stringify({files:report.length,pngBytes:report.reduce((s,x)=>s+x.pngBytes,0),webpBytes:report.reduce((s,x)=>s+x.webpBytes,0)}));
