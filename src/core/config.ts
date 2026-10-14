@@ -1,3 +1,4 @@
+import { withExerciseDurations } from './exerciseDurations';
 import { BACK_ROUTINE, BACK_LEVEL_2_ROUTINE } from './backRoutine';
 import { NIGHT_ROUTINE, NIGHT_LEVEL_2_ROUTINE } from './nightRoutine';
 import type { AppData, Exercise, PoseStep, Routine, VoiceCue } from './types';
@@ -138,11 +139,11 @@ export function selectRoutineExercises(routine: Routine, disabledIds: string[] =
   const selected = routine.exercises.filter(exercise => !disabledIds.includes(exercise.id));
   return { ...routine, exercises: selected.length ? selected : [routine.exercises[0]] };
 }
-export function getSelectedRoutine(routineId: string, settings: Pick<import('./types').Settings, 'disabledExerciseIds' | 'preparationSeconds'>): Routine {
-  const routine = getRoutine(routineId);
+export function getSelectedRoutine(routineId: string, settings: Pick<import('./types').Settings, 'disabledExerciseIds' | 'preparationSeconds' | 'exerciseDurations'>): Routine {
+  const routine = withExerciseDurations(getRoutine(routineId), settings.exerciseDurations?.[routineId]);
   return withPreparation(selectRoutineExercises(routine, settings.disabledExerciseIds?.[routine.id]), settings.preparationSeconds ?? DEFAULT_PREPARATION_SECONDS);
 }
 export function getSessionRoutine(session: import('./types').Session): Routine {
-  const routine = withPreparation(getRoutine(session.routineId), session.preparationSeconds);
+  const routine = withPreparation(withExerciseDurations(getRoutine(session.routineId), session.exerciseDurations), session.preparationSeconds);
   return session.exerciseIds ? { ...routine, exercises: session.exerciseIds.map(id => routine.exercises.find(exercise => exercise.id === id)!).filter(Boolean) } : routine;
 }

@@ -619,7 +619,7 @@ export default function App() {
         </div>
       )}
       {showExercises ? (
-        <ExercisesPage settings={settings} onChange={(disabledExerciseIds) => workout.updateSettings({ disabledExerciseIds })} />
+        <ExercisesPage settings={settings} onChange={(disabledExerciseIds) => workout.updateSettings({ disabledExerciseIds })} onDurationChange={(exerciseDurations) => workout.updateSettings({ exerciseDurations })} />
       ) : showAbout ? (
         <AboutPage />
       ) : activeScreen ? (

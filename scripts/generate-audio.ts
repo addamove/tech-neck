@@ -1,3 +1,4 @@
+import { customDurationDescription } from '../src/core/exerciseDurations';
 // macOS build-time generator. Run: npx tsx scripts/generate-audio.ts
 // The resulting MP3s are ordinary offline assets; users need no system TTS service.
 import { execFileSync } from 'node:child_process';
@@ -22,6 +23,7 @@ register(CHIN_FOCUS_TIP, CHIN_TIP_TIMING.focusSeconds);
 register(CHIN_SHOULDERS_TIP, CHIN_TIP_TIMING.shouldersSeconds);
 for (const routine of ROUTINES) for (const exercise of routine.exercises) {
   register(exercise.description, Math.max(1, preparationInstructionSeconds(exercise, 0)), routine.id);
+  register(customDurationDescription(exercise), Math.max(1, preparationInstructionSeconds(exercise, 0)), routine.id);
   const cues = activeVoiceTimeline(exercise);
   cues.forEach((cue, index) => {
     const deadline = Math.min(exercise.durationSeconds, cue.deadlineSeconds ?? Infinity, cues[index + 1]?.atSeconds ?? Infinity);

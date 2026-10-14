@@ -5,14 +5,15 @@ export interface Exercise {
   prepPoseId: string; poses: PoseStep[]; cues: VoiceCue[]; instructionAudio?: string;
 }
 export type PreparationSeconds = 5 | 10 | 20;
-export interface Routine { family?: 'neck' | 'hands' | 'eyes' | 'night' | 'back'; preparationSeconds?: PreparationSeconds; id: string; title: string; subtitle: string; xp: number; exercises: Exercise[] }
+export interface Routine { exerciseDurations?: Record<string, number>; family?: 'neck' | 'hands' | 'eyes' | 'night' | 'back'; preparationSeconds?: PreparationSeconds; id: string; title: string; subtitle: string; xp: number; exercises: Exercise[] }
 export type VoiceGender = 'female' | 'male';
 export type IllustrationStyle = 'male' | 'female' | 'marker';
-export interface Settings { preparationSeconds?: PreparationSeconds; voiceEnabled: boolean; voiceRate: number; voiceGender: VoiceGender; illustrationStyle: IllustrationStyle; wakeLockEnabled: boolean; selectedRoutineId: string; rememberedRoutineIds?: Record<string, string>; disabledExerciseIds: Record<string, string[]> }
+export interface Settings { exerciseDurations?: Record<string, Record<string, number>>; preparationSeconds?: PreparationSeconds; voiceEnabled: boolean; voiceRate: number; voiceGender: VoiceGender; illustrationStyle: IllustrationStyle; wakeLockEnabled: boolean; selectedRoutineId: string; rememberedRoutineIds?: Record<string, string>; disabledExerciseIds: Record<string, string[]> }
 export type Phase = 'prep' | 'active' | 'complete';
 export interface Session {
   preparationSeconds?: PreparationSeconds;
   exerciseIds?: string[];
+  exerciseDurations?: Record<string, number>;
   id: string; routineId: string; startedAt: string; phase: Phase; exerciseIndex: number;
   phaseElapsedMs: number; elapsedMs: number; paused: boolean;
   skippedExerciseIds: string[]; completedExerciseIds: string[];
@@ -20,6 +21,7 @@ export interface Session {
 export interface Completion {
   preparationSeconds?: PreparationSeconds;
   exerciseIds?: string[];
+  exerciseDurations?: Record<string, number>;
   id: string; routineId: string; startedAt: string; completedAt: string; elapsedMs: number; xp: number;
   skippedExerciseIds: string[]; completedExerciseIds: string[];
 }

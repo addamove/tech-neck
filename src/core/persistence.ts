@@ -1,3 +1,4 @@
+import { isExerciseDuration, withExerciseDurations } from './exerciseDurations';
 import { isPreparationSeconds, withPreparation, DEFAULT_PREPARATION_SECONDS } from './preparation';
 import { rememberedRoutines } from './routineFamilies';
 import { DEFAULT_DATA, ROUTINES, LEGACY_LEVEL_2_EXERCISE_IDS } from './config';
@@ -50,10 +51,21 @@ function preparationSeconds(value: unknown) {
   if (value !== undefined && !isPreparationSeconds(value)) fail('Preparation time must be 5, 10 or 20 seconds.');
   return value as import('./types').PreparationSeconds | undefined;
 }
+function durationSnapshot(value: unknown, routine: Routine): Record<string, number> | undefined {
+  if (value === undefined) return undefined;
+  const values = object(value, 'exerciseDurations');
+  const result: Record<string, number> = {};
+  for (const [id, seconds] of Object.entries(values)) {
+    if (!routine.exercises.some(exercise => exercise.id === id) || !isExerciseDuration(seconds)) fail('Invalid exercise duration.');
+    result[id] = seconds as number;
+  }
+  return result;
+}
 function validateSession(value: unknown): Session {
   const item = object(value, 'session');
   const preparation = preparationSeconds(item.preparationSeconds);
-  const canonical = withPreparation(routineFor(item.routineId), preparation);
+  const durations = durationSnapshot(item.exerciseDurations, routineFor(item.routineId));
+  const canonical = withPreparation(withExerciseDurations(routineFor(item.routineId), durations), preparation);
   const snapshot = validateSnapshot(item.exerciseIds, canonical);
   const routine = snapshot ? { ...canonical, exercises: snapshot.map(id => canonical.exercises.find(exercise => exercise.id === id)!) } : canonical;
   text(item.id, 'session.id'); date(item.startedAt, 'session.startedAt');
@@ -76,7 +88,7 @@ function validateSession(value: unknown): Session {
   const expectedCount = item.phase === 'complete' ? routine.exercises.length : item.exerciseIndex;
   if (progressedIds.length !== expectedCount || validIds.slice(0, expectedCount).some(id => !progressedIds.includes(id))) fail('Session exercise progress is inconsistent.');
   if (item.phase === 'complete' && (item.exerciseIndex !== routine.exercises.length - 1 || item.phaseElapsedMs !== 0)) fail('Completed session is inconsistent.');
-  const session: Session = { ...(preparation === undefined ? {} : { preparationSeconds: preparation }), ...(snapshot ? { exerciseIds: snapshot } : {}), id: item.id, routineId: routine.id, startedAt: item.startedAt, phase: item.phase as Session['phase'], exerciseIndex: item.exerciseIndex, phaseElapsedMs: item.phaseElapsedMs, elapsedMs: item.elapsedMs, paused: item.paused, skippedExerciseIds: skipped, completedExerciseIds: completed };
+  const session: Session = { ...(preparation === undefined ? {} : { preparationSeconds: preparation }), ...(snapshot ? { exerciseIds: snapshot } : {}), ...(durations ? { exerciseDurations: durations } : {}), id: item.id, routineId: routine.id, startedAt: item.startedAt, phase: item.phase as Session['phase'], exerciseIndex: item.exerciseIndex, phaseElapsedMs: item.phaseElapsedMs, elapsedMs: item.elapsedMs, paused: item.paused, skippedExerciseIds: skipped, completedExerciseIds: completed };
   if (session.phase === 'active' && session.phaseElapsedMs >= exercise.durationSeconds * 1000 && routine.id === 'level-1' && legacyWorkSeconds[exercise.id] !== undefined) {
     // The old session already did the shortened exercise. Preserve the time
     // actually spent and wait at the next preparation without running it.
@@ -87,7 +99,8 @@ function validateSession(value: unknown): Session {
 function validateCompletion(value: unknown): Completion {
   const item = object(value, 'completion');
   const preparation = preparationSeconds(item.preparationSeconds);
-  const routine = withPreparation(routineFor(item.routineId), preparation);
+  const durations = durationSnapshot(item.exerciseDurations, routineFor(item.routineId));
+  const routine = withPreparation(withExerciseDurations(routineFor(item.routineId), durations), preparation);
   text(item.id, 'completion.id'); date(item.startedAt, 'startedAt'); date(item.completedAt, 'completedAt');
   if (Date.parse(item.completedAt) < Date.parse(item.startedAt)) fail('Completion precedes workout start.');
   elapsed(item.elapsedMs, maximumElapsedMs(routine));
@@ -100,7 +113,7 @@ function validateCompletion(value: unknown): Completion {
   const completed = exerciseIds(item.completedExerciseIds, 'completedExerciseIds', ids);
   if (skipped.some(id => completed.includes(id)) || skipped.length + completed.length !== ids.length) fail('Completion exercise progress is inconsistent.');
   if (snapshot && item.elapsedMs + ELAPSED_TOLERANCE_MS < completed.reduce((sum, id) => sum + routine.exercises.find(exercise => exercise.id === id)!.durationSeconds * 1000, 0)) fail('Elapsed time is inconsistent with completed exercise work.');
-  return { ...(preparation === undefined ? {} : { preparationSeconds: preparation }), ...(snapshot ? { exerciseIds: snapshot } : {}), id: item.id, routineId: routine.id, startedAt: item.startedAt, completedAt: item.completedAt, elapsedMs: item.elapsedMs, xp: routine.xp, skippedExerciseIds: skipped, completedExerciseIds: completed };
+  return { ...(preparation === undefined ? {} : { preparationSeconds: preparation }), ...(snapshot ? { exerciseIds: snapshot } : {}), ...(durations ? { exerciseDurations: durations } : {}), id: item.id, routineId: routine.id, startedAt: item.startedAt, completedAt: item.completedAt, elapsedMs: item.elapsedMs, xp: routine.xp, skippedExerciseIds: skipped, completedExerciseIds: completed };
 }
 export function validateData(value: unknown): AppData {
   const data = object(value, 'backup');
@@ -124,6 +137,12 @@ export function validateData(value: unknown): AppData {
       disabledExerciseIds[id] = ids;
     }
   }
+  const exerciseDurations: Record<string, Record<string, number>> = {};
+  if (settings.exerciseDurations !== undefined) {
+    for (const [id, values] of Object.entries(object(settings.exerciseDurations, 'exerciseDurations'))) {
+      exerciseDurations[id] = durationSnapshot(values, routineFor(id))!;
+    }
+  }
   if (!Array.isArray(data.completions) || data.completions.length > 10000) fail('Too many completion records.');
   const completions = data.completions.map(validateCompletion);
   if (new Set(completions.map(item => item.id)).size !== completions.length) fail('Duplicate completion IDs.');
@@ -131,9 +150,9 @@ export function validateData(value: unknown): AppData {
   if (session && session.phase !== 'complete' && completions.some(item => item.id === session.id)) fail('Active session has already been completed.');
   if (session?.phase === 'complete') {
     const completion = completions.find(item => item.id === session.id);
-    if (!completion || completion.routineId !== session.routineId || completion.startedAt !== session.startedAt || completion.elapsedMs !== session.elapsedMs || completion.preparationSeconds !== session.preparationSeconds || JSON.stringify(completion.exerciseIds) !== JSON.stringify(session.exerciseIds) || JSON.stringify(completion.completedExerciseIds) !== JSON.stringify(session.completedExerciseIds) || JSON.stringify(completion.skippedExerciseIds) !== JSON.stringify(session.skippedExerciseIds)) fail('Completed session has no matching completion record.');
+    if (!completion || completion.routineId !== session.routineId || completion.startedAt !== session.startedAt || completion.elapsedMs !== session.elapsedMs || completion.preparationSeconds !== session.preparationSeconds || JSON.stringify(completion.exerciseIds) !== JSON.stringify(session.exerciseIds) || JSON.stringify(completion.exerciseDurations) !== JSON.stringify(session.exerciseDurations) || JSON.stringify(completion.completedExerciseIds) !== JSON.stringify(session.completedExerciseIds) || JSON.stringify(completion.skippedExerciseIds) !== JSON.stringify(session.skippedExerciseIds)) fail('Completed session has no matching completion record.');
   }
-  return { format: 'tech-neck', version: 1, settings: { preparationSeconds: preparation, voiceEnabled: settings.voiceEnabled, voiceRate: Math.min(1.5, settings.voiceRate), disabledExerciseIds, voiceGender, illustrationStyle, wakeLockEnabled: settings.wakeLockEnabled, selectedRoutineId: selectedRoutine.id, ...(settings.rememberedRoutineIds !== undefined ? { rememberedRoutineIds: rememberedRoutines(ROUTINES, selectedRoutine.id, settings.rememberedRoutineIds) } : {}) }, completions, session };
+  return { format: 'tech-neck', version: 1, settings: { preparationSeconds: preparation, voiceEnabled: settings.voiceEnabled, voiceRate: Math.min(1.5, settings.voiceRate), disabledExerciseIds, ...(settings.exerciseDurations !== undefined ? { exerciseDurations } : {}), voiceGender, illustrationStyle, wakeLockEnabled: settings.wakeLockEnabled, selectedRoutineId: selectedRoutine.id, ...(settings.rememberedRoutineIds !== undefined ? { rememberedRoutineIds: rememberedRoutines(ROUTINES, selectedRoutine.id, settings.rememberedRoutineIds) } : {}) }, completions, session };
 }
 export function parseImport(textValue: string): AppData {
   if (new TextEncoder().encode(textValue).length > MAX_IMPORT_BYTES) fail('File exceeds the 2 MB limit.');

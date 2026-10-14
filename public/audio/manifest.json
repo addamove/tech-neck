@@ -554,5 +554,29 @@
   "Keep your arms resting overhead. Slowly draw your knees in, then lower and extend your legs.": {
     "src": "/audio/c971bf0e6ec82e79.mp3",
     "duration": 5.556875
+  },
+  "Stand tall with your chin gently tucked and shoulders relaxed. With straight arms, slowly sweep forward and up overhead, then lower in a large, comfortable circular motion. Reverse direction halfway through.": {
+    "src": "/audio/758ae2c591f35729.mp3",
+    "duration": 12.145958
+  },
+  "Look at an object about twenty feet, or six metres, away for twenty seconds. Then gently close your eyes for ten seconds. Repeat until the timer ends. Follow the voice without watching the screen.": {
+    "src": "/audio/f4249e220f35f17a.mp3",
+    "duration": 12.615125
+  },
+  "Close your eyes gently and keep them closed. Keep your head still as you slowly trace a small, comfortable circle with your eyes. Change direction halfway through. Do not force your gaze to the edges. Stop if you feel discomfort or dizziness.": {
+    "src": "/audio/5ef108b2a1bb192b.mp3",
+    "duration": 15.043333
+  },
+  "Sit tall and relax your shoulders. Tilt your left ear towards your left shoulder, resting a hand lightly on your head without pulling. Halfway through, slowly return to the centre and change sides.": {
+    "src": "/audio/48f66996d52bc78b.mp3",
+    "duration": 11.361167
+  },
+  "Lie on your back with your lower legs resting on a stable padded support. Rest your head and upper back comfortably on a cushion or wedge if needed. Let your arms relax beside you and breathe naturally until the timer ends.": {
+    "src": "/audio/083e400e82db9ae7.mp3",
+    "duration": 12.319792
+  },
+  "Sit securely on the front of a stable padded block or chair, with both feet flat. Fold forward comfortably, resting your chest towards your thighs and letting your arms hang. Breathe slowly until the timer ends. Finish by sitting up gradually.": {
+    "src": "/audio/6141f228c61e7558.mp3",
+    "duration": 14.930667
   }
 }

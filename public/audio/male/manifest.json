@@ -554,5 +554,29 @@
   "Keep your arms resting overhead. Slowly draw your knees in, then lower and extend your legs.": {
     "src": "/audio/male/ae5950066956f7fa.mp3",
     "duration": 5.514208
+  },
+  "Stand tall with your chin gently tucked and shoulders relaxed. With straight arms, slowly sweep forward and up overhead, then lower in a large, comfortable circular motion. Reverse direction halfway through.": {
+    "src": "/audio/male/c5dc7e28a97dc547.mp3",
+    "duration": 12.429417
+  },
+  "Look at an object about twenty feet, or six metres, away for twenty seconds. Then gently close your eyes for ten seconds. Repeat until the timer ends. Follow the voice without watching the screen.": {
+    "src": "/audio/male/5fdfdce1bd56644a.mp3",
+    "duration": 11.481917
+  },
+  "Close your eyes gently and keep them closed. Keep your head still as you slowly trace a small, comfortable circle with your eyes. Change direction halfway through. Do not force your gaze to the edges. Stop if you feel discomfort or dizziness.": {
+    "src": "/audio/male/6a9d5eb11f1596b7.mp3",
+    "duration": 13.604625
+  },
+  "Sit tall and relax your shoulders. Tilt your left ear towards your left shoulder, resting a hand lightly on your head without pulling. Halfway through, slowly return to the centre and change sides.": {
+    "src": "/audio/male/9e25632fd024acf0.mp3",
+    "duration": 11.431708
+  },
+  "Lie on your back with your lower legs resting on a stable padded support. Rest your head and upper back comfortably on a cushion or wedge if needed. Let your arms relax beside you and breathe naturally until the timer ends.": {
+    "src": "/audio/male/19ec32b99936ebba.mp3",
+    "duration": 12.567875
+  },
+  "Sit securely on the front of a stable padded block or chair, with both feet flat. Fold forward comfortably, resting your chest towards your thighs and letting your arms hang. Breathe slowly until the timer ends. Finish by sitting up gradually.": {
+    "src": "/audio/male/69778de4c4a41688.mp3",
+    "duration": 13.922
   }
 }

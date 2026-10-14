@@ -2355,3 +2355,33 @@ svg {
   margin: 0;
   transform: none;
 }
+
+.exercise-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 8px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--control-tint);
+  color: var(--deep);
+}
+.exercise-duration button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 8px;
+  touch-action: manipulation;
+}
+.exercise-duration button:hover:not(:disabled) { background: #ffffffb3; }
+.exercise-duration button:active:not(:disabled) { transform: scale(.92); }
+.exercise-duration button:disabled { opacity: .3; cursor: default; }
+.exercise-duration output { min-width: 41px; text-align: center; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 360px) {
+  .exercise-setting-row { gap: 9px; }
+  .exercise-setting-switch { padding-left: 0; }
+}
