@@ -13,7 +13,7 @@ await mkdir(archive, { recursive: true });
 const records = [];
 for (const [name, source] of [['sheet', sheet], ['circles', circles]]) {
   const input = await readFile(source);
-  await copyFile(source, resolve(archive, `${name}.png`));
+  if (resolve(source) !== resolve(archive, `${name}.png`)) await copyFile(source, resolve(archive, `${name}.png`));
   const { width, height } = await sharp(input).metadata();
   if (!width || !height || width !== height || width % 2) throw new Error('Expected an even square native source.');
   const cells = name === 'sheet' ? ['open', 'closed', 'distance', 'palming'] : ['circles'];

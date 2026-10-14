@@ -538,5 +538,13 @@
   "Sit up slowly. Pause before standing.": {
     "src": "/audio/male/b9742532a7e82aa9.mp3",
     "duration": 2.060125
+  },
+  "Close your eyes gently and keep them closed. Keep your head still as you slowly trace a small, comfortable circle with your eyes. Change direction after fifteen seconds. Do not force your gaze to the edges. Stop if you feel discomfort or dizziness.": {
+    "src": "/audio/male/59f56f1756a7fd17.mp3",
+    "duration": 14.253125
+  },
+  "Keep your eyes closed. Circle slowly clockwise, with your head still and no strain.": {
+    "src": "/audio/male/4c0576d74593577c.mp3",
+    "duration": 5.029917
   }
 }

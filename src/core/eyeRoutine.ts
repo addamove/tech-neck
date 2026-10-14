@@ -14,11 +14,11 @@ export const EYE_ROUTINE: Routine = {
         { poseId: 'eyes-closed', seconds: 2, label: 'Eyes closed · 2 seconds' },
         { poseId: 'eyes-squeeze', seconds: 2, label: 'Gently squeeze · no wrinkles at the outer corners' },
       ],
-      cues: Array.from({ length: 3 }, (_, cycle) => [
+      cues: Array.from({ length: 5 }, (_, cycle) => [
         { atSeconds: cycle * 6, text: 'Open.' },
         { atSeconds: cycle * 6 + 2, text: 'Close.' },
         { atSeconds: cycle * 6 + 4, text: 'Gently squeeze.' },
-      ]).flat(),
+      ]).flat().filter(cue => cue.atSeconds !== 0),
     },
     {
       id: 'eye-distance', title: 'Look away & rest', durationSeconds: 60, prepSeconds: 20,
@@ -29,10 +29,10 @@ export const EYE_ROUTINE: Routine = {
     },
     {
       id: 'eye-circles', title: 'Gentle eye circles', durationSeconds: 30, prepSeconds: 20,
-      description: 'Keep your head still. Slowly trace a small, comfortable circle with your eyes. Change direction after fifteen seconds. Do not force your gaze to the edges. Stop if you feel discomfort or dizziness.',
+      description: 'Close your eyes gently and keep them closed. Keep your head still as you slowly trace a small, comfortable circle with your eyes. Change direction after fifteen seconds. Do not force your gaze to the edges. Stop if you feel discomfort or dizziness.',
       prepPoseId: 'eyes-circle-clockwise',
-      poses: [{ poseId: 'eyes-circle-clockwise', seconds: 15, label: 'Slow circles · clockwise' }, { poseId: 'eyes-circle-counterclockwise', seconds: 15, label: 'Slow circles · counterclockwise' }],
-      cues: [{ atSeconds: 0, text: 'Circle your gaze slowly clockwise. Keep your head still and do not strain.' }, { atSeconds: 15, text: 'Change direction. Keep the circles small, slow and comfortable.' }],
+      poses: [{ poseId: 'eyes-circle-clockwise', seconds: 15, label: 'Eyes closed · slowly clockwise' }, { poseId: 'eyes-circle-counterclockwise', seconds: 15, label: 'Eyes closed · slowly counterclockwise' }],
+      cues: [{ atSeconds: 0, text: 'Keep your eyes closed. Circle slowly clockwise, with your head still and no strain.' }, { atSeconds: 15, text: 'Change direction. Keep the circles small, slow and comfortable.' }],
     },
     {
       id: 'eye-palming', title: 'Palming', durationSeconds: 60, prepSeconds: 20,

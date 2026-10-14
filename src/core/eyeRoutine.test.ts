@@ -55,10 +55,14 @@ test('Eye Gym voice cues are unique, fit their slots in both voices and match bl
     }
   }
   const blinks = activeVoiceTimeline(EYE_ROUTINE.exercises[0]);
-  assert.deepEqual(blinks.filter(cue => cue.text === 'Close.').map(cue => cue.atSeconds), [2, 8, 14]);
-  assert.deepEqual(blinks.filter(cue => cue.text === 'Gently squeeze.').map(cue => cue.atSeconds), [4, 10, 16]);
-  assert.deepEqual(blinks.filter(cue => cue.text === 'Open.').map(cue => cue.atSeconds), [1, 6, 12]);
-  assert.ok(blinks.every(cue => cue.atSeconds < 18));
+  assert.deepEqual(blinks.filter(cue => cue.text === 'Close.').map(cue => cue.atSeconds), [2, 8, 14, 20, 26]);
+  assert.deepEqual(blinks.filter(cue => cue.text === 'Gently squeeze.').map(cue => cue.atSeconds), [4, 10, 16, 22, 28]);
+  assert.deepEqual(blinks.filter(cue => cue.text === 'Open.').map(cue => cue.atSeconds), [6, 12, 18, 24]);
+  assert.equal(blinks.length, 15); // Start plus fourteen movement cues.
+  assert.equal(blinks[0].text, 'Start.');
+  assert.ok(blinks.slice(1).every(cue => cue.atSeconds >= 2 && cue.atSeconds < 30));
+  assert.match(EYE_ROUTINE.exercises[2].description, /keep them closed/);
+  assert.ok(EYE_ROUTINE.exercises[2].poses.every(pose => pose.label.startsWith('Eyes closed')));
   for (const file of ['open', 'closed', 'distance', 'palming', 'circles']) assert.ok(existsSync(`public/art/eye-gym/${file}.webp`));
 });
 
