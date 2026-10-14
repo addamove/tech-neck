@@ -20,12 +20,13 @@ export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
   { id: 'hands-days-7', title: 'A Hand Habit', description: 'Make room for your hands on seven different days.', criterion: 'Complete hands workouts on 7 different days. They do not need to be consecutive.', metric: 'activeDays', target: 7, routineId: 'hands-level-1' },
   { id: 'eyes-three-day', title: 'Eyes on Three', description: 'Three gentle screen breaks in one day.', criterion: 'Complete Eye Gym 3 times in one day.', metric: 'dailySessions', target: 3, family: 'eyes' },
   { id: 'eyes-five-days', title: 'Five Days of Focus', description: 'Five days of making room for your eyes.', criterion: 'Complete Eye Gym 3 times a day for 5 consecutive days.', metric: 'threeSessionStreak', target: 5, family: 'eyes' },
+  { id: 'night-unwind', title: 'Time to Unwind', description: 'A gentle stretch for the second half of your day.', criterion: 'Complete either Night Stretch level between noon and midnight, in your local time.', metric: 'afternoonSessions', target: 1, family: 'night' },
   { id: 'all-three-one-day', title: 'Full Circle', description: 'Care for your neck, hands and eyes in one day.', criterion: 'Complete Neck, Hands and Eye Gym in one day.', metric: 'familiesToday', target: 3 },
 ];
 
 type Values = Record<AchievementDefinition['metric'], number>;
 type Scope = { values: Values; dates: Set<string>; dailyCounts: Map<string, number>; previousDay: number | null; consecutive: number; previousTripleDay: number | null; tripleConsecutive: number };
-const newScope = (): Scope => ({ values: { sessions: 0, bestStreak: 0, activeDays: 0, dailySessions: 0, threeSessionStreak: 0, familiesToday: 0 }, dates: new Set(), dailyCounts: new Map(), previousDay: null, consecutive: 0, previousTripleDay: null, tripleConsecutive: 0 });
+const newScope = (): Scope => ({ values: { sessions: 0, bestStreak: 0, activeDays: 0, dailySessions: 0, threeSessionStreak: 0, familiesToday: 0, afternoonSessions: 0 }, dates: new Set(), dailyCounts: new Map(), previousDay: null, consecutive: 0, previousTripleDay: null, tripleConsecutive: 0 });
 const scopeKey = (definition: AchievementDefinition) => definition.routineId ? `routine:${definition.routineId}` : definition.family ? `family:${definition.family}` : 'all';
 
 /** Badges and their award dates are derived from canonical completed history. */
@@ -41,7 +42,7 @@ export function getAchievements(records: Completion[], now = new Date()): Achiev
   for (const record of ordered) {
     const date = localDateKey(new Date(record.completedAt));
     const family = ROUTINES.find(routine => routine.id === record.routineId)?.family;
-    if (family) {
+    if (family && ['neck', 'hands', 'eyes'].includes(family)) {
       const families = familiesByDay.get(date) ?? new Set<string>();
       families.add(family); familiesByDay.set(date, families);
     }
@@ -49,6 +50,7 @@ export function getAchievements(records: Completion[], now = new Date()): Achiev
       if (scope.startsWith('routine:') && scope !== `routine:${record.routineId}`) continue;
       if (scope.startsWith('family:') && scope !== `family:${family}`) continue;
       state.values.sessions++;
+      if (new Date(record.completedAt).getHours() >= 12) state.values.afternoonSessions++;
       const dailyCount = (state.dailyCounts.get(date) ?? 0) + 1;
       state.dailyCounts.set(date, dailyCount);
       state.values.dailySessions = Math.max(state.values.dailySessions, dailyCount);

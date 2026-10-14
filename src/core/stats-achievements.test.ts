@@ -14,9 +14,9 @@ function completed(date: Date, id: string): Completion {
 function days(start: Date, count: number, step = 1): Completion[] {
   return Array.from({ length: count }, (_, index) => completed(new Date(start.getFullYear(), start.getMonth(), start.getDate() + index * step, 12), `day-${index}`));
 }
-test('empty history has thirteen locked badges with zero progress and zero statistics', () => {
+test('empty history has fourteen locked badges with zero progress and zero statistics', () => {
   const badges = getAchievements([]);
-  assert.equal(badges.length, 13);
+  assert.equal(badges.length, 14);
   assert.ok(badges.every(badge => !badge.unlocked && badge.unlockedAt === null && badge.progress === 0 && badge.progressPercent === 0));
   const stats = getStats([]);
   assert.equal(stats.totalXp, 0); assert.equal(stats.currentStreak, 0); assert.equal(stats.bestStreak, 0); assert.equal(stats.activeDays, 0);

@@ -2149,3 +2149,83 @@ svg {
 .eye-art > img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .eye-direction { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .exercise-thumbnail .eye-art { width: 100%; }
+
+/* Night Stretch: deep violet header and a soft violet control palette. */
+.app-shell[data-theme="night"] {
+  --teal: #8261b9;
+  --deep: #613c99;
+  --header-fill: #3f2865;
+  --header-ink: #ffffff;
+  --header-icon-bg: #ffffff40;
+  --hero-accent: #7956af;
+  --light: #f3eef9;
+  --muted: #81778e;
+  --focus: #52337b;
+  --carousel-arrow: #8a6ab7;
+  --back-fill: #ede3f8;
+  --back-ink: #503476;
+  --nav-fill: #eee5f8;
+  --nav-border: #e8ddf1;
+  --divider: #eee8f3;
+  --control-tint: #f3edf9;
+  --control-tint-soft: #f8f5fb;
+  --panel-tint: #f3edf9;
+  --round-fill: #7954ae;
+  --button-fill: #694299;
+  --on-accent: #fff;
+  --progress-track: #ece3f5;
+  --completion-fill: #efe7f9;
+  --completion-border: #d8c5ee;
+  --completion-halo: #faf7fd;
+  --soft-border: #e8def1;
+  --chart-bg: #fdfbff;
+  --chart-grid: #e9e0f3;
+  --chart-bar: #9871c6;
+  --chart-line: #7046a6;
+  --badge-border: #e9e0f2;
+  --badge-earned-border: #cfb7e9;
+  --badge-earned-fill: #f6f0fc;
+  --locked-fill: #f2eff6;
+  --badge-progress-track: #ece5f4;
+  --badge-progress: #b79cd3;
+  --segmented-border: #e9e0f2;
+  --segmented-bg: #f6f1fa;
+  --nav-shadow: #3822531a;
+  --nav-shadow-close: #38225308;
+  --selected-shadow: #3822530d;
+  --dialog-shadow: #38225322;
+  --shell-shadow: #38225310;
+}
+.routine-card[data-routine="night-stretch"],
+.routine-card[data-routine="night-stretch-level-2"],
+.routine-backlight-card[data-routine="night-stretch"],
+.routine-backlight-card[data-routine="night-stretch-level-2"] {
+  --teal: #8261b9;
+  --deep: #613c99;
+  --control-tint: #f3edf9;
+  --play-icon: #7951b3;
+  --play-shadow: #6841a10d;
+  --play-glow: #b899e888;
+  --play-press-glow: #ad87df99;
+  --play-halo-one: #9566d488;
+  --play-halo-two: #d2b8f366;
+  --play-halo-three: #ad85de80;
+  --play-halo-four: #c3a4e666;
+}
+.home-screen[data-routine="night-stretch"],
+.home-screen[data-routine="night-stretch-level-2"] {
+  --wave-back-one: #e6d9f4;
+  --wave-back-two: #c9afe6;
+  --wave-back-three: #9c76ca;
+  --wave-front-one: #c3a5e2;
+  --wave-front-two: #865bb7;
+  --wave-front-three: #d4bced;
+}
+.night-art { position: relative; width: min(100%, 370px); margin-inline: auto; display: block; }
+.night-art-pose { position: absolute; inset: 0; width: 100%; height: 100%; }
+.night-art img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.exercise-thumbnail .night-art { width: 100%; height: 100%; left: 0; top: 0; transform: none; }
+
+/* Match grounded hands and feet across the two cat–cow frames. */
+.night-art[data-pose="night-cow"]:not([data-style="marker"]) img { transform: scaleX(.92); transform-origin: 7.53% 50%; }
+.night-art[data-pose="night-cow"][data-style="marker"] img { transform: translateX(4.27%) scaleX(.98); transform-origin: 5.53% 50%; }

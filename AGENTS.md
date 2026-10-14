@@ -9,3 +9,4 @@
 - Complete and verify the feature before committing and pushing. Follow the user's current authorization for publishing.
 
 - Eye Gym is marker-only regardless of the selected illustration style. Level 1 has 180 active seconds (30 blinking + 60 distance/rest + 30 circles + 60 palming); Level 2 has 300 active seconds with 180 seconds of palming. Preparation is additional. Keep research limitations in docs/eye-gym.md.
+- Night Stretch has a deep-violet theme, three illustration styles and two levels: Level 1 is 300 active seconds; Level 2 is 450 active seconds with all eleven reference movements in their original order. Preparation is additional. Keep both levels in one swipe family; see docs/night-stretch.md for timing and source review.
