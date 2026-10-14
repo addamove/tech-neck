@@ -1,3 +1,4 @@
+import { BACK_ROUTINE, BACK_LEVEL_2_ROUTINE } from './backRoutine';
 import { NIGHT_ROUTINE, NIGHT_LEVEL_2_ROUTINE } from './nightRoutine';
 import type { AppData, Exercise, PoseStep, Routine, VoiceCue } from './types';
 import { withPreparation, DEFAULT_PREPARATION_SECONDS } from './preparation';
@@ -124,7 +125,7 @@ export const LEVEL_2_ROUTINE: Routine = {
 export const LEGACY_LEVEL_2_EXERCISE_IDS = ['chin-tuck', 'snow-angel', 'bent-angel', 'arm-lift', 'back-neck', 'side-neck', 'chest', 'arm-circles', 'head-turns'];
 const level2Order = ['chin-tuck', 'snow-angel', 'bent-angel', 'arm-lift', 'arm-circles', 'back-neck', 'side-neck', 'head-turns', 'chest'];
 LEVEL_2_ROUTINE.exercises = level2Order.map(id => LEVEL_2_ROUTINE.exercises.find(exercise => exercise.id === id)!);
-export const ROUTINES: Routine[] = [{ family: 'neck', id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }, LEVEL_2_ROUTINE, HANDS_ROUTINE, EYE_ROUTINE, EYE_LEVEL_2_ROUTINE, NIGHT_ROUTINE, NIGHT_LEVEL_2_ROUTINE];
+export const ROUTINES: Routine[] = [{ family: 'neck', id: 'level-1', title: 'Tech Neck · Level 1', subtitle: '7 exercises for your neck and shoulders', xp: 10, exercises }, LEVEL_2_ROUTINE, HANDS_ROUTINE, EYE_ROUTINE, EYE_LEVEL_2_ROUTINE, NIGHT_ROUTINE, NIGHT_LEVEL_2_ROUTINE, BACK_ROUTINE, BACK_LEVEL_2_ROUTINE];
 export const DEFAULT_ROUTINE = ROUTINES[0];
 export const DEFAULT_DATA: AppData = {
   format: 'tech-neck', version: 1,

@@ -2229,3 +2229,86 @@ svg {
 /* Match grounded hands and feet across the two cat–cow frames. */
 .night-art[data-pose="night-cow"]:not([data-style="marker"]) img { transform: scaleX(.92); transform-origin: 7.53% 50%; }
 .night-art[data-pose="night-cow"][data-style="marker"] img { transform: translateX(4.27%) scaleX(.98); transform-origin: 5.53% 50%; }
+
+/* Back Care: brochure indigo header and a soft violet control palette. */
+.app-shell[data-theme="back"] {
+  --teal: #6573ad;
+  --deep: #42558e;
+  --header-fill: #445789;
+  --header-ink: #ffffff;
+  --header-icon-bg: #ffffff40;
+  --hero-accent: #6476ad;
+  --light: #eff1f8;
+  --muted: #747d91;
+  --focus: #354875;
+  --carousel-arrow: #7787b7;
+  --back-fill: #e3e9f7;
+  --back-ink: #354b80;
+  --nav-fill: #e8edf8;
+  --nav-border: #dce3f1;
+  --divider: #e7ebf3;
+  --control-tint: #edf1f9;
+  --control-tint-soft: #f5f7fb;
+  --panel-tint: #edf1f9;
+  --round-fill: #5e73aa;
+  --button-fill: #455e9b;
+  --on-accent: #fff;
+  --progress-track: #e3e9f5;
+  --completion-fill: #e8eef9;
+  --completion-border: #c5d1ee;
+  --completion-halo: #f7f9fd;
+  --soft-border: #dee5f1;
+  --chart-bg: #fbfcff;
+  --chart-grid: #e0e7f3;
+  --chart-bar: #7b8fc6;
+  --chart-line: #4e68a6;
+  --badge-border: #e0e7f2;
+  --badge-earned-border: #bccbe9;
+  --badge-earned-fill: #f0f4fc;
+  --locked-fill: #eff2f6;
+  --badge-progress-track: #e5ebf4;
+  --badge-progress: #9caed3;
+  --segmented-border: #e0e7f2;
+  --segmented-bg: #f1f4fa;
+  --nav-shadow: #2333531a;
+  --nav-shadow-close: #23335308;
+  --selected-shadow: #2333530d;
+  --dialog-shadow: #23335322;
+  --shell-shadow: #23335310;
+}
+.routine-card[data-routine="back-care"],
+.routine-card[data-routine="back-care-level-2"],
+.routine-backlight-card[data-routine="back-care"],
+.routine-backlight-card[data-routine="back-care-level-2"] {
+  --teal: #6573ad;
+  --deep: #42558e;
+  --control-tint: #edf1f9;
+  --play-icon: #5873b3;
+  --play-shadow: #4162a10d;
+  --play-glow: #99b0e888;
+  --play-press-glow: #87a2df99;
+  --play-halo-one: #668bd488;
+  --play-halo-two: #b8c9f366;
+  --play-halo-three: #85a1de80;
+  --play-halo-four: #a4bae666;
+}
+.home-screen[data-routine="back-care"],
+.home-screen[data-routine="back-care-level-2"] {
+  --wave-back-one: #d9e2f4;
+  --wave-back-two: #afc0e6;
+  --wave-back-three: #7691ca;
+  --wave-front-one: #a5b8e2;
+  --wave-front-two: #5b7cb7;
+  --wave-front-three: #bccded;
+}
+
+.back-art { position: relative; width: min(100%, 370px); margin-inline: auto; display: block; }
+.back-art-pose { position: absolute; inset: 0; }
+.back-art img { width: 100%; height: 100%; object-fit: contain; }
+.back-art .back-direction { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; color: var(--deep); }
+.exercise-thumbnail .back-art { width: 100%; height: 100%; left: 0; top: 0; transform: none; }
+.exercise-thumbnail .back-direction { display: none; }
+
+/* Exclude tiny adjacent-cell remnants without clipping the person's silhouette. */
+.back-art[data-style="female"][data-pose="back-block-curl-down"] img { clip-path: polygon(2% 0,100% 0,100% 100%,0 100%,0 40%,2% 40%); }
+.back-art[data-style="female"][data-pose="back-roller-curl-up"] img { clip-path: polygon(0 0,100% 0,100% 40%,91.5% 40%,91.5% 100%,0 100%); }

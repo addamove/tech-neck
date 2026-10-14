@@ -218,7 +218,8 @@ export default function App() {
   const handsTheme = (activeScreen ? routine : selectedRoutine).id === "hands-level-1";
   const eyesTheme = (activeScreen ? routine : selectedRoutine).family === "eyes";
   const nightTheme = (activeScreen ? routine : selectedRoutine).family === "night";
-  const brandName = nightTheme ? "night stretch" : eyesTheme ? "eye gym" : handsTheme ? "wrist fix" : "tech neck";
+  const backTheme = (activeScreen ? routine : selectedRoutine).family === "back";
+  const brandName = backTheme ? "back care" : nightTheme ? "night stretch" : eyesTheme ? "eye gym" : handsTheme ? "wrist fix" : "tech neck";
   // Preview poses without advancing the exercise or scheduling active cues.
   // Doorway preparation keeps its initial pose; other demos freeze on pause.
   const preparationPoses = exercise.poses.filter(
@@ -261,6 +262,7 @@ export default function App() {
   const selectedIsSaved = savedWorkout?.routineId === selectedRoutine.id;
   const isHandsRoutine = routine.id === "hands-level-1";
   const isEyeRoutine = routine.family === "eyes";
+  const isBackRoutine = routine.family === "back";
   const isNightRoutine = routine.family === "night";
   const resumeExistingWorkout = () => {
     if (homeLaunchGuard.current) return;
@@ -516,7 +518,7 @@ export default function App() {
         <p>Tech Neck currently supports mobile screen sizes only. Open it on your phone or use a narrower window.</p>
       </div>
     </main>
-    <div className={`app-shell ${activeScreen ? "session-shell" : ""}`} data-theme={nightTheme ? "night" : eyesTheme ? "eyes" : handsTheme ? "hands" : "neck"}>
+    <div className={`app-shell ${activeScreen ? "session-shell" : ""}`} data-theme={backTheme ? "back" : nightTheme ? "night" : eyesTheme ? "eyes" : handsTheme ? "hands" : "neck"}>
       <header className="topbar">
         {showAbout || showExercises ? (
           <>
@@ -540,7 +542,7 @@ export default function App() {
               <ArrowLeft size={17} />
               Back
             </button>
-            <span className="header-label">{isEyeRoutine || isNightRoutine ? routine.title.toUpperCase() : isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
+            <span className="header-label">{isEyeRoutine || isNightRoutine || isBackRoutine ? routine.title.toUpperCase() : isHandsRoutine ? "HANDS · LEVEL 1" : routine.id === "level-2" ? "LEVEL 2" : "LEVEL 1"}</span>
             <button
               className="top-icon"
               aria-label={
@@ -573,7 +575,7 @@ export default function App() {
               <span className="brand-dot" />
               {brandName}
             </button>
-            {!handsTheme && !eyesTheme && !nightTheme && <button
+            {!handsTheme && !eyesTheme && !nightTheme && !backTheme && <button
               className="top-icon"
               aria-label="About Tech Neck"
               onClick={openAbout}
@@ -600,13 +602,13 @@ export default function App() {
             </div>
             <span className="eyebrow">DAILY RESET COMPLETE</span>
             <h1>
-              {isNightRoutine ? "A softer evening." : isEyeRoutine ? "A moment of rest." : isHandsRoutine ? "Small movements." : "A little taller."}
-              <br />{isNightRoutine ? "Time to unwind." : isEyeRoutine ? "Back to your day." : isHandsRoutine ? "Time for yourself." : "A little lighter."}
+              {isBackRoutine ? "Space to move." : isNightRoutine ? "A softer evening." : isEyeRoutine ? "A moment of rest." : isHandsRoutine ? "Small movements." : "A little taller."}
+              <br />{isBackRoutine ? "A moment for your back." : isNightRoutine ? "Time to unwind." : isEyeRoutine ? "Back to your day." : isHandsRoutine ? "Time for yourself." : "A little lighter."}
             </h1>
             <p>
               You made time for yourself.
               <br />
-              {isNightRoutine ? "Carry that calm into the rest of your evening." : isEyeRoutine ? "Keep taking regular screen breaks." : isHandsRoutine ? "Keep your hands relaxed and comfortable." : "Keep that good posture with you."}
+              {isBackRoutine ? "Keep your movements comfortable throughout the day." : isNightRoutine ? "Carry that calm into the rest of your evening." : isEyeRoutine ? "Keep taking regular screen breaks." : isHandsRoutine ? "Keep your hands relaxed and comfortable." : "Keep that good posture with you."}
             </p>
             <div className="earned-xp">
               <Sparkles size={19} /> +{routine.xp} XP
@@ -687,6 +689,7 @@ export default function App() {
             <h1 className="exercise-title">{exercise.title}</h1>
             <p className="exercise-description">{exercise.description}</p>
             {isEyeRoutine && <p className="movement-comfort">Follow the voice and look away from the screen. Stop if you feel discomfort or dizziness.</p>}
+            {isBackRoutine && <p className="movement-comfort">{routine.id === "back-care-level-2" ? "You need a soft roll, a stable padded support and a cushion. " : "Use a comfortable mat. "}Move gently and stop if pain or tingling increases.</p>}
             {isNightRoutine && <p className="movement-comfort">Use a comfortable range, without bouncing. Stop if a stretch hurts. A mat and small cushions may help.</p>}
             {isHandsRoutine && <p className="movement-comfort">Move within a comfortable range. Stop if pain, tingling or numbness increases.</p>}
             {frame.phase === "prep" ? (
@@ -795,8 +798,8 @@ export default function App() {
               <span>feel better.</span>
             </h1>
             <p>
-              A few minutes for your {selectedRoutine.family === "night" ? "whole body" : selectedRoutine.family === "eyes" ? "eyes" : selectedRoutine.id === "hands-level-1" ? "hands and wrists" : "neck"}.
-              <br />{nightTheme ? "A quiet moment to wind down." : "A fresh start for the rest of your day."}
+              A few minutes for your {selectedRoutine.family === "back" ? "back and core" : selectedRoutine.family === "night" ? "whole body" : selectedRoutine.family === "eyes" ? "eyes" : selectedRoutine.id === "hands-level-1" ? "hands and wrists" : "neck"}.
+              <br />{backTheme ? "Make room for comfortable movement." : nightTheme ? "A quiet moment to wind down." : "A fresh start for the rest of your day."}
             </p>
           </div>
           <div className="home-links">
@@ -1022,7 +1025,7 @@ export default function App() {
               ))}
             </div>
             <small className="achievement-note">
-              Tech Neck and Night Stretch earn 10 XP; Hands and Eye Gym earn 5 XP. First Step earns 30 XP once; each other milestone earns 100 XP once.
+              Back Care earns 10 XP at Level 1 and 30 XP at Level 2. Tech Neck and Night Stretch earn 10 XP; Hands and Eye Gym earn 5 XP. First Step earns 30 XP once; each other milestone earns 100 XP once.
             </small>
           </section>
         </main>
@@ -1115,7 +1118,7 @@ export default function App() {
           </section>
           <section className="illustration-section">
             <h2>Illustrations</h2>
-            <p>{eyesTheme ? "Eye Gym uses marker sketches. This choice applies to Neck, Hands and Night Stretch." : "Choose the look of your exercise guide."}</p>
+            <p>{eyesTheme ? "Eye Gym uses marker sketches. This choice applies to Neck, Hands, Night Stretch and Back Care." : "Choose the look of your exercise guide."}</p>
             <fieldset className="illustration-options">
               <legend className="sr-only">Illustration style</legend>
               {(

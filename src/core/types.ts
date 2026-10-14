@@ -5,7 +5,7 @@ export interface Exercise {
   prepPoseId: string; poses: PoseStep[]; cues: VoiceCue[]; instructionAudio?: string;
 }
 export type PreparationSeconds = 5 | 10 | 20;
-export interface Routine { family?: 'neck' | 'hands' | 'eyes' | 'night'; preparationSeconds?: PreparationSeconds; id: string; title: string; subtitle: string; xp: number; exercises: Exercise[] }
+export interface Routine { family?: 'neck' | 'hands' | 'eyes' | 'night' | 'back'; preparationSeconds?: PreparationSeconds; id: string; title: string; subtitle: string; xp: number; exercises: Exercise[] }
 export type VoiceGender = 'female' | 'male';
 export type IllustrationStyle = 'male' | 'female' | 'marker';
 export interface Settings { preparationSeconds?: PreparationSeconds; voiceEnabled: boolean; voiceRate: number; voiceGender: VoiceGender; illustrationStyle: IllustrationStyle; wakeLockEnabled: boolean; selectedRoutineId: string; rememberedRoutineIds?: Record<string, string>; disabledExerciseIds: Record<string, string[]> }

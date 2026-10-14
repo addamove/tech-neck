@@ -1,3 +1,4 @@
+import BackArt from './BackArt';
 import NightArt from './NightArt';
 import EyeArt from './EyeArt';
 import type { IllustrationStyle } from "../core/types";
@@ -324,6 +325,7 @@ export default function ExerciseArt({
   isRest?: boolean;
   illustrationStyle?: IllustrationStyle;
 }) {
+  if (poseId.startsWith('back-') && !poseId.startsWith('back-neck-')) return <BackArt poseId={poseId} title={title} illustrationStyle={illustrationStyle} />;
   if (poseId.startsWith('night-')) return <NightArt poseId={poseId} title={title} illustrationStyle={illustrationStyle} />;
   if (poseId.startsWith('eyes-')) return <EyeArt poseId={poseId} title={title} />;
   if (poseId.startsWith('hands-')) {
