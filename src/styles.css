@@ -2081,6 +2081,8 @@ svg {
 }
 
 .exercises-screen > p { color: #718487; font-size: 14px; line-height: 1.65; margin-bottom: 28px; }
+.exercises-screen > section + section { margin-top: 32px; }
+.exercises-screen > section > h2 { font-size: 20px; font-weight: 600; line-height: 1.4; margin-bottom: 14px; }
 .exercise-settings-list { border-top: 1px solid #e4eeed; }
 .exercise-setting-row { display: flex; align-items: center; gap: 12px; min-height: 90px; padding: 10px 0; border-bottom: 1px solid #e4eeed; }
 .exercise-thumbnail { width: 64px; height: 70px; flex-shrink: 0; position: relative; overflow: hidden; border-radius: 12px; background: #f3f8f7; }

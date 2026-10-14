@@ -1,6 +1,7 @@
 import { Minus, Plus } from 'lucide-react';
 import { DURATION_STEP, MIN_EXERCISE_SECONDS, MAX_EXERCISE_SECONDS } from '../core/exerciseDurations';
-import { ROUTINES } from '../core/config';
+import { ROUTINES, getRoutine } from '../core/config';
+import { routineFamily } from '../core/routineFamilies';
 import type { Settings } from '../core/types';
 import ExerciseArt from './ExerciseArt';
 
@@ -10,12 +11,14 @@ export default function ExercisesPage({ settings, onChange, onDurationChange }: 
   onDurationChange: (durations: NonNullable<Settings["exerciseDurations"]>) => void;
 }) {
   const disabled = settings.disabledExerciseIds ?? {};
+  const family = routineFamily(getRoutine(settings.selectedRoutineId));
+  const routines = ROUTINES.filter(routine => routineFamily(routine) === family);
   return (
     <main className="inner-screen exercises-screen">
       <span className="eyebrow">MAKE IT YOURS</span>
       <h1>Exercises</h1>
       <p>Choose your movements and adjust their duration in 5-second steps. Changes apply to your next workout.</p>
-      {ROUTINES.map((routine) => {
+      {routines.map((routine) => {
         const omitted = disabled[routine.id] ?? [];
         const enabledCount = routine.exercises.filter((exercise) => !omitted.includes(exercise.id)).length;
         return <section key={routine.id} aria-label={routine.title}>
