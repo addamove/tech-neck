@@ -34,7 +34,7 @@ References consulted:
 
 54 new WebP frames, eighteen per style; cat–cow reuses the existing Night Stretch art. Opposite sides mirror the same asset. Photo frames use quality 85; marker frames use lossless WebP with decoded-pixel equality checks. Generation sources stay in ignored `work/back-care/originals`, not the deployed app.
 
-`scripts/prepare-back-art.mjs` takes nine source sheets (A male/female/marker, B male/female/marker, C male/female/marker) followed by the corrected marker cross-body pair. Reviewed crops avoid neighbouring sprites. Pairs use equal canvases without resampling the marker strokes. The correction uses both forearms folded across the chest, replacing the confusing hand-behind-head anatomy in both states. The final compression report is written beside the archived originals.
+`scripts/prepare-back-art.mjs` takes nine source sheets (A male/female/marker, B male/female/marker, C male/female/marker) followed by the corrected marker cross-body pair. Reviewed crops avoid neighbouring sprites. Pairs use equal canvases without resampling the marker strokes. The corrected v3 pair shows two separate, near-straight arms beside the torso, reaching forward during the curl. It replaces the ambiguous crossed-arm and hand-behind-head variants. Keep shoulder-to-hand silhouettes distinct; do not reintroduce crossed forearms. The final compression report is written beside the archived originals.
 
 Generation brief: white background, entire person visible, purple clothes, simple existing marker style or matching male/female photo style; fixed camera, body size, pelvis and grounded limb positions across paired states. No text or embedded arrows. Direction arrows are SVG overlays in the app.
 

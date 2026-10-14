@@ -54,9 +54,9 @@ for(let sheet=0;sheet<3;sheet++) for(let style=0;style<3;style++) {
     report.push({style:label,pose:names[sheet][index],pngBytes:crop.length,webpBytes:compressed.length,lossless:label==='marker'});
   }
 }
-// Corrected anatomy: both arms folded across the chest. Equal native-pixel
+// Corrected anatomy: separate, near-straight arms alongside the body. Equal native-pixel
 // canvases keep the pelvis and planted foot aligned across the two states.
-const correctedArchive=resolve(archive,'marker-cross-v2.png');
+const correctedArchive=resolve(archive,'marker-cross-v3.png');
 if(resolve(correctedCross)!==correctedArchive) await copyFile(correctedCross,correctedArchive);
 for(const [pose,top] of [['cross-down',0],['cross-up',610]]) {
   const crop=await sharp(correctedCross).extract({left:0,top,width:1254,height:600}).png().toBuffer();
