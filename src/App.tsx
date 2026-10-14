@@ -36,7 +36,7 @@ import { getPose } from "./core/engine";
 import { PREPARATION_DEMO_STEP_MS, getRoutine } from "./core/config";
 import { publicAssetUrl } from "./core/assets";
 import type { AppData } from "./core/types";
-import ExerciseArt from "./components/ExerciseArt";
+import ExerciseArt, { canAnimatePreparation } from "./components/ExerciseArt";
 import AboutPage from "./components/AboutPage";
 import ExercisesPage from "./components/ExercisesPage";
 import ActivityCharts from "./components/ActivityCharts";
@@ -221,7 +221,7 @@ export default function App() {
   const backTheme = (activeScreen ? routine : selectedRoutine).family === "back";
   const brandName = backTheme ? "back care" : nightTheme ? "night stretch" : eyesTheme ? "eye gym" : handsTheme ? "wrist fix" : "tech neck";
   // Preview poses without advancing the exercise or scheduling active cues.
-  // Doorway preparation keeps its initial pose; other demos freeze on pause.
+  // Mirrored-side and doorway exercises keep their initial preparation pose.
   const preparationPoses = exercise.poses.filter(
     (pose, index, poses) =>
       poses.findIndex(
@@ -235,7 +235,7 @@ export default function App() {
     preparationPoses.findIndex((pose) => pose.poseId === exercise.prepPoseId),
   );
   const preparationStep =
-    session && frame.phase === "prep" && exercise.id !== "chest"
+    session && frame.phase === "prep" && canAnimatePreparation(exercise, settings.illustrationStyle)
       ? preparationPoses[
           (prepStartIndex +
             Math.floor(session.phaseElapsedMs / PREPARATION_DEMO_STEP_MS)) %

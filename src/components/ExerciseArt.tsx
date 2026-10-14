@@ -1,7 +1,7 @@
-import BackArt from './BackArt';
-import NightArt from './NightArt';
+import BackArt, { BACK_PICTURES } from './BackArt';
+import NightArt, { NIGHT_PICTURES } from './NightArt';
 import EyeArt from './EyeArt';
-import type { IllustrationStyle } from "../core/types";
+import type { Exercise, IllustrationStyle } from "../core/types";
 import { publicAssetUrl } from "../core/assets";
 import HandsArt from './HandsArt';
 
@@ -312,6 +312,16 @@ for (const direction of ["front", "back"]) {
   };
   MOVEMENTS[`arm-circles-${direction}`] = movement;
   for (const phase of [1, 2, 3]) MOVEMENTS[`arm-circles-${direction}-${phase}`] = movement;
+}
+
+// A mirrored side switch is useful during the workout, but distracting in a
+// short preview. Read the actual artwork metadata so new mirrored poses inherit
+// the same preparation behaviour without another list of exercise IDs.
+export function canAnimatePreparation(exercise: Exercise, style: IllustrationStyle): boolean {
+  if (exercise.id === 'chest') return false;
+  return !exercise.poses.some(({ poseId }) =>
+    (BACK_PICTURES[poseId] ?? NIGHT_PICTURES[poseId] ?? STYLE_POSES[style][poseId])?.mirror,
+  );
 }
 
 export default function ExerciseArt({
